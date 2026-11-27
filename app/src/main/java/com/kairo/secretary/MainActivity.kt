@@ -84,11 +84,11 @@ fun KairoSecretaryApp(viewModel: SecretaryViewModel = viewModel()) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
 
-    // Refresh NotificationListener permission when returning from Android Settings
+    // Refresh NotificationListener permission & sync workspace when returning from Android Settings
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
-                viewModel.refreshListenerPermission()
+                viewModel.onAppResumed()
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
@@ -142,7 +142,7 @@ fun KairoSecretaryApp(viewModel: SecretaryViewModel = viewModel()) {
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },
         floatingActionButton = {
-            if (selectedTab != 3) {
+            if (selectedTab != 3 && uiState.isAuthenticated) {
                 FloatingActionButton(onClick = { showCaptureDialog = true }) {
                     Icon(Icons.Default.Add, contentDescription = strings.captureBtn)
                 }
@@ -197,11 +197,22 @@ fun KairoSecretaryApp(viewModel: SecretaryViewModel = viewModel()) {
                         strings = strings,
                         viewModel = viewModel,
                         onOpenTasks = { selectedTab = 2 },
-                        onOpenInbox = { selectedTab = 1 }
+                        onOpenInbox = { selectedTab = 1 },
+                        onOpenPrivacy = { selectedTab = 4 }
                     )
-                    1 -> InboxScreen(uiState = uiState, strings = strings, viewModel = viewModel)
+                    1 -> InboxScreen(
+                        uiState = uiState,
+                        strings = strings,
+                        viewModel = viewModel,
+                        onOpenPrivacy = { selectedTab = 4 }
+                    )
                     2 -> TasksScreen(uiState = uiState, strings = strings, viewModel = viewModel)
-                    3 -> ChatScreen(uiState = uiState, strings = strings, viewModel = viewModel)
+                    3 -> ChatScreen(
+                        uiState = uiState,
+                        strings = strings,
+                        viewModel = viewModel,
+                        onOpenPrivacy = { selectedTab = 4 }
+                    )
                     4 -> MemoryPrivacyScreen(uiState = uiState, strings = strings, viewModel = viewModel)
                 }
             }

@@ -4,12 +4,16 @@ import android.Manifest
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
+import android.os.PowerManager
 import android.provider.CalendarContract
 import android.provider.Settings
+import android.service.notification.NotificationListenerService
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
@@ -22,6 +26,7 @@ import java.time.ZoneId
 
 object DeadlineNotifier {
     const val CHANNEL_ID = "kairo_proactive_alerts"
+    private val MYT_ZONE = ZoneId.of("Asia/Kuala_Lumpur")
 
     fun ensureChannel(context: Context) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -77,17 +82,107 @@ object DeadlineNotifier {
         return context.packageName in enabledPackages
     }
 
-    fun openNotificationListenerSettings(context: Context) {
-        val intent = Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS).apply {
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        }
-        context.startActivity(intent)
+    fun isIgnoringBatteryOptimizations(context: Context): Boolean {
+        val pm = context.getSystemService(PowerManager::class.java) ?: return false
+        return runCatching { pm.isIgnoringBatteryOptimizations(context.packageName) }.getOrDefault(false)
     }
 
-    fun openAddToCalendarIntent(context: Context, task: SecretaryTask) {
+    fun isPackageInstalled(context: Context, packageName: String): Boolean {
+        return runCatching {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                context.packageManager.getPackageInfo(
+                    packageName,
+                    PackageManager.PackageInfoFlags.of(0)
+                )
+            } else {
+                @Suppress("DEPRECATION")
+                context.packageManager.getPackageInfo(packageName, 0)
+            }
+            true
+        }.getOrDefault(false)
+    }
+
+    fun requestListenerRebind(context: Context): Boolean {
+        if (!isNotificationListenerEnabled(context)) return false
+        return runCatching {
+            NotificationListenerService.requestRebind(
+                ComponentName(context, SecretaryNotificationListenerService::class.java)
+            )
+            true
+        }.getOrDefault(false)
+    }
+
+    fun openNotificationListenerSettings(context: Context) {
+        runCatching {
+            val intent = Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            context.startActivity(intent)
+        }
+    }
+
+    /**
+     * Opens App Info page where vivo OriginOS (Android 13+) users tap the 3-dot menu ->
+     * "允许受限制的设置 / Allow restricted settings" before enabling Notification Listener access.
+     */
+    fun openAppDetailsSettings(context: Context) {
+        runCatching {
+            val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                data = Uri.fromParts("package", context.packageName, null)
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            context.startActivity(intent)
+        }
+    }
+
+    fun openBatteryOptimizationSettings(context: Context) {
+        val launched = runCatching {
+            val intent = Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            context.startActivity(intent)
+        }.isSuccess
+        if (!launched) {
+            openAppDetailsSettings(context)
+        }
+    }
+
+    fun openVivoAutostartSettings(context: Context) {
+        val vivoIntents = listOf(
+            Intent().setComponent(
+                ComponentName(
+                    "com.vivo.permissionmanager",
+                    "com.vivo.permissionmanager.activity.BgStartUpManagerActivity"
+                )
+            ),
+            Intent().setComponent(
+                ComponentName(
+                    "com.iqoo.powersaving",
+                    "com.iqoo.powersaving.PowerSavingManagerActivity"
+                )
+            ),
+            Intent().setComponent(
+                ComponentName(
+                    "com.vivo.permissionmanager",
+                    "com.vivo.permissionmanager.activity.PurviewTabActivity"
+                )
+            )
+        )
+        for (candidate in vivoIntents) {
+            val started = runCatching {
+                candidate.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                context.startActivity(candidate)
+            }.isSuccess
+            if (started) return
+        }
+        openBatteryOptimizationSettings(context)
+    }
+
+    fun openAddToCalendarIntent(context: Context, task: SecretaryTask): Boolean {
         val intent = Intent(Intent.ACTION_INSERT).apply {
             data = CalendarContract.Events.CONTENT_URI
             putExtra(CalendarContract.Events.TITLE, task.title)
+            putExtra(CalendarContract.Events.EVENT_TIMEZONE, "Asia/Kuala_Lumpur")
             val details = buildString {
                 if (task.description.isNotBlank()) append(task.description)
                 if (!task.sourceSender.isNullOrBlank()) {
@@ -106,13 +201,13 @@ object DeadlineNotifier {
                     if (!timeStr.isNullOrBlank() && Regex("""^\d{2}:\d{2}$""").matches(timeStr)) {
                         val time = LocalTime.parse(timeStr)
                         val startMillis = LocalDateTime.of(date, time)
-                            .atZone(ZoneId.systemDefault())
+                            .atZone(MYT_ZONE)
                             .toInstant()
                             .toEpochMilli()
                         putExtra(CalendarContract.EXTRA_EVENT_BEGIN_TIME, startMillis)
                         putExtra(CalendarContract.EXTRA_EVENT_END_TIME, startMillis + 60 * 60 * 1000L)
                     } else {
-                        val startMillis = date.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+                        val startMillis = date.atStartOfDay(MYT_ZONE).toInstant().toEpochMilli()
                         putExtra(CalendarContract.EXTRA_EVENT_ALL_DAY, true)
                         putExtra(CalendarContract.EXTRA_EVENT_BEGIN_TIME, startMillis)
                     }
@@ -120,6 +215,6 @@ object DeadlineNotifier {
             }
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         }
-        context.startActivity(intent)
+        return runCatching { context.startActivity(intent) }.isSuccess
     }
 }

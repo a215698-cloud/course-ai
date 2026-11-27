@@ -195,5 +195,81 @@ data class ApplyChatActionRequest(
 @Serializable
 data class ErrorPayload(
     val error: String? = null,
-    val raw: JsonObject? = null
+    val errorCode: String? = null,
+    val raw: JsonObject? = null,
+    val authRequired: Boolean? = null,
+    val claimed: Boolean? = null
 )
+
+@Serializable
+data class HealthResponse(
+    val ok: Boolean = false,
+    val service: String = "",
+    val timezone: String = "Asia/Kuala_Lumpur",
+    val serverTimeMYT: String = "",
+    val aiConfigured: Boolean = false,
+    val authRequired: Boolean = true,
+    val authClaimed: Boolean = false,
+    val envPasscodeConfigured: Boolean = false,
+    val storageEngine: String = ""
+)
+
+@Serializable
+data class AuthStatusResponse(
+    val authRequired: Boolean = true,
+    val claimed: Boolean = false,
+    val envOverride: Boolean = false,
+    val authenticated: Boolean = false
+)
+
+@Serializable
+data class AuthPasscodeRequest(
+    val passcode: String
+)
+
+@Serializable
+data class AuthTokenResponse(
+    val token: String = "",
+    val claimed: Boolean = true,
+    val authenticated: Boolean = true,
+    val error: String? = null
+)
+
+@Serializable
+data class ListenerDiagnostic(
+    val timestampMYT: String = "",
+    val source: String = "",
+    val sender: String = "",
+    val status: String = "",
+    val detail: String = ""
+)
+
+@Serializable
+data class ChannelStats(
+    val source: String = "",
+    val lastCaptureMYT: String = "",
+    val lastSyncMYT: String = "",
+    val lastSender: String = "",
+    val lastStatus: String = "",
+    val lastDetail: String = "",
+    val syncedCount: Int = 0
+)
+
+@Serializable
+data class PendingSyncItem(
+    val id: String,
+    val dedupeKey: String,
+    val request: IngestRequest,
+    val queuedAtMYT: String,
+    val retryCount: Int = 0,
+    val lastError: String? = null
+)
+
+enum class ConnectionErrorType {
+    NONE,
+    NOT_CONFIGURED,
+    SERVER_OFFLINE,
+    NETWORK_ERROR,
+    AUTH_FAILED,
+    AI_SERVICE_ERROR
+}

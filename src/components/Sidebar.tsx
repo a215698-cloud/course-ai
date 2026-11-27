@@ -4,6 +4,7 @@ import {
   CheckSquare,
   Inbox,
   LayoutDashboard,
+  LogOut,
   MessageSquare,
   Moon,
   Shield,
@@ -31,6 +32,7 @@ interface SidebarProps {
   };
   mobileOpen: boolean;
   onCloseMobile: () => void;
+  onSignOut?: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -44,6 +46,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   counts,
   mobileOpen,
   onCloseMobile,
+  onSignOut,
 }) => {
   const [imgError, setImgError] = useState(false);
 
@@ -167,10 +170,21 @@ export const Sidebar: React.FC<SidebarProps> = ({
               KS
             </div>
           )}
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             <p className="text-sm font-medium text-slate-900 dark:text-slate-100 truncate">Personal Workspace</p>
             <p className="text-xs text-slate-500 dark:text-slate-400 truncate">EN · 中文 · BM</p>
           </div>
+          {onSignOut && (
+            <button
+              type="button"
+              onClick={onSignOut}
+              title="Lock Workspace"
+              aria-label="Lock Workspace"
+              className="p-2 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
+          )}
         </div>
       </div>
     </div>

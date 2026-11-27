@@ -1,0 +1,16 @@
+node_modules
+dist
+data
+.git
+.github
+.gradle
+app
+build
+gradle
+gradlew
+gradlew.bat
+settings.gradle.kts
+build.gradle.kts
+gradle.properties
+.env
+*.apk

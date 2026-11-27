@@ -2,19 +2,20 @@ import React, { useMemo, useState } from 'react';
 import { CalendarPlus, ChevronLeft, ChevronRight, Download, MapPin } from 'lucide-react';
 import { SecretaryState } from '../types/secretary';
 import { Translations } from '../i18n/translations';
-import { buildGoogleCalendarUrl, formatSourceName, getTodayIso } from '../utils/dateUtils';
+import { buildGoogleCalendarUrl, formatSourceName, getKualaLumpurDateParts, getTodayIso } from '../utils/dateUtils';
 
 interface CalendarViewProps {
   state: SecretaryState;
   t: Translations;
+  onDownloadIcs: () => Promise<void>;
 }
 
-export const CalendarView: React.FC<CalendarViewProps> = ({ state, t }) => {
+export const CalendarView: React.FC<CalendarViewProps> = ({ state, t, onDownloadIcs }) => {
   const todayIso = getTodayIso();
   const [selectedDate, setSelectedDate] = useState(todayIso);
   const [cursorDate, setCursorDate] = useState(() => {
-    const now = new Date();
-    return new Date(now.getFullYear(), now.getMonth(), 1);
+    const kl = getKualaLumpurDateParts();
+    return new Date(kl.year, kl.month - 1, 1);
   });
 
   const year = cursorDate.getFullYear();
@@ -55,14 +56,14 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ state, t }) => {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4">
         <p className="text-xs text-slate-500 dark:text-slate-400">{t.calendar.exportHint}</p>
-        <a
-          href="/api/calendar/export.ics"
-          download="kairo-schedule.ics"
+        <button
+          type="button"
+          onClick={() => void onDownloadIcs()}
           className="inline-flex items-center gap-2 px-4 py-2 text-xs font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700 whitespace-nowrap"
         >
           <Download className="w-3.5 h-3.5" />
           {t.actions.exportIcs}
-        </a>
+        </button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
@@ -74,8 +75,8 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ state, t }) => {
               <button
                 type="button"
                 onClick={() => {
-                  const now = new Date();
-                  setCursorDate(new Date(now.getFullYear(), now.getMonth(), 1));
+                  const kl = getKualaLumpurDateParts();
+                  setCursorDate(new Date(kl.year, kl.month - 1, 1));
                   setSelectedDate(todayIso);
                 }}
                 className="px-2.5 py-1.5 text-xs font-medium rounded-lg border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"

@@ -19,6 +19,7 @@ import { CalendarView } from './components/CalendarView';
 import { ChatView } from './components/ChatView';
 import { MemoryPrivacyView } from './components/MemoryPrivacyView';
 import { AndroidBridgeView } from './components/AndroidBridgeView';
+import { AuthGate } from './components/AuthGate';
 import { getRelativeDeadlineLabel } from './utils/dateUtils';
 
 export default function App() {
@@ -26,6 +27,9 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
+  const [authToken, setAuthToken] = useState<string | null>(null);
+  const [authClaimed, setAuthClaimed] = useState<boolean>(true);
+  const [authReady, setAuthReady] = useState<boolean>(false);
 
   const [activeTab, setActiveTab] = useState<ActiveTab>('overview');
   const [selectedMessageId, setSelectedMessageId] = useState<string | null>(null);
@@ -71,11 +75,40 @@ export default function App() {
     }
   }, [theme]);
 
+  const fetchAuthStatus = useCallback(async () => {
+    try {
+      const res = await fetch('/api/auth/status');
+      const data = await res.json();
+      setAuthClaimed(Boolean(data.claimed));
+      setAuthReady(true);
+      if (!data.claimed) {
+        setAuthToken(null);
+        setLoading(false);
+      }
+    } catch (err) {
+      setAuthReady(true);
+      setLoading(false);
+      setError(err instanceof Error ? err.message : 'Unable to reach backend');
+    }
+  }, []);
+
   const fetchState = useCallback(async () => {
+    if (!authToken) {
+      setLoading(false);
+      return;
+    }
     try {
       setLoading(true);
-      const res = await fetch('/api/state');
+      const res = await fetch('/api/state', {
+        headers: { Authorization: `Bearer ${authToken}` },
+      });
       const data = await res.json();
+      if (res.status === 401) {
+        setAuthToken(null);
+        setState(null);
+        setAuthClaimed(Boolean(data.claimed ?? true));
+        return;
+      }
       if (!res.ok) throw new Error(data.error || 'Failed to load workspace');
       setState(data);
       setError(null);
@@ -84,11 +117,17 @@ export default function App() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [authToken]);
 
   useEffect(() => {
-    void fetchState();
-  }, [fetchState]);
+    void fetchAuthStatus();
+  }, [fetchAuthStatus]);
+
+  useEffect(() => {
+    if (authToken) {
+      void fetchState();
+    }
+  }, [authToken, fetchState]);
 
   // Proactive deadline alert watcher (browser Notifications API if granted)
   useEffect(() => {
@@ -126,10 +165,19 @@ export default function App() {
 
   const apiMutate = async (url: string, options: RequestInit, toastMsg?: string) => {
     const res = await fetch(url, {
-      headers: { 'Content-Type': 'application/json' },
       ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+        ...(options.headers || {}),
+      },
     });
     const data = await res.json();
+    if (res.status === 401) {
+      setAuthToken(null);
+      setState(null);
+      throw new Error(data.error || 'Session expired. Please unlock workspace.');
+    }
     if (!res.ok) {
       throw new Error(data.error || 'Request failed');
     }
@@ -140,6 +188,30 @@ export default function App() {
     }
     if (toastMsg) showToast(toastMsg);
     return data;
+  };
+
+  const downloadWithAuth = async (url: string, filename: string) => {
+    if (!authToken) return;
+    try {
+      const res = await fetch(url, {
+        headers: { Authorization: `Bearer ${authToken}` },
+      });
+      if (res.status === 401) {
+        setAuthToken(null);
+        setState(null);
+        return;
+      }
+      if (!res.ok) throw new Error('Download failed');
+      const blob = await res.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(blobUrl);
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Download failed');
+    }
   };
 
   const handleIngest = async (payload: {
@@ -208,7 +280,7 @@ export default function App() {
     android: { title: t.android.title, subtitle: t.android.subtitle },
   };
 
-  if (loading && !state) {
+  if (!authReady || (loading && !state && authToken)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 text-slate-600 dark:text-slate-300">
         <div className="flex items-center gap-2.5 text-sm">
@@ -216,6 +288,21 @@ export default function App() {
           <span>{t.common.loading}</span>
         </div>
       </div>
+    );
+  }
+
+  if (!authToken) {
+    return (
+      <AuthGate
+        claimed={authClaimed}
+        language={language}
+        onLanguageChange={setLanguage}
+        onAuthenticated={(token) => {
+          setAuthClaimed(true);
+          setAuthToken(token);
+          setError(null);
+        }}
+      />
     );
   }
 
@@ -256,6 +343,10 @@ export default function App() {
         counts={counts}
         mobileOpen={mobileNavOpen}
         onCloseMobile={() => setMobileNavOpen(false)}
+        onSignOut={() => {
+          setAuthToken(null);
+          setState(null);
+        }}
       />
 
       <div className="flex-1 min-w-0 flex flex-col">
@@ -398,7 +489,13 @@ export default function App() {
             />
           )}
 
-          {activeTab === 'calendar' && <CalendarView state={current} t={t} />}
+          {activeTab === 'calendar' && (
+            <CalendarView
+              state={current}
+              t={t}
+              onDownloadIcs={() => downloadWithAuth('/api/calendar/export.ics', 'kairo-schedule.ics')}
+            />
+          )}
 
           {activeTab === 'chat' && (
             <ChatView
@@ -463,10 +560,11 @@ export default function App() {
                   'Workspace cleared.'
                 );
               }}
+              onDownloadBackup={() => downloadWithAuth('/api/export', 'kairo-secretary-backup.json')}
             />
           )}
 
-          {activeTab === 'android' && <AndroidBridgeView t={t} />}
+          {activeTab === 'android' && <AndroidBridgeView t={t} authToken={authToken} />}
         </main>
       </div>
 

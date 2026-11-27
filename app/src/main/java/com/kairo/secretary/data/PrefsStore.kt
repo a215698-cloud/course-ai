@@ -2,33 +2,156 @@ package com.kairo.secretary.data
 
 import android.content.Context
 import com.kairo.secretary.BuildConfig
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
+
+object SyncEventBus {
+    private val _events = MutableSharedFlow<Unit>(extraBufferCapacity = 16)
+    val events = _events.asSharedFlow()
+
+    fun notifySynced() {
+        _events.tryEmit(Unit)
+    }
+}
 
 class PrefsStore(context: Context) {
     private val prefs = context.getSharedPreferences("kairo_secretary_prefs", Context.MODE_PRIVATE)
     private val json = Json { ignoreUnknownKeys = true }
 
     companion object {
+        private val queueLock = Any()
+
         private const val KEY_BACKEND_URL = "backend_url"
+        private const val KEY_RECENT_URLS = "recent_backend_urls_json"
+        private const val KEY_AUTH_TOKEN = "auth_bearer_token"
         private const val KEY_LANGUAGE = "ui_language"
         private const val KEY_CACHED_STATE = "cached_state_json"
+        private const val KEY_LISTENER_DIAG = "listener_last_diagnostic"
+        private const val KEY_CHANNEL_STATS = "listener_channel_stats_json"
+        private const val KEY_LISTENER_BOUND = "listener_service_bound"
+        private const val KEY_LISTENER_BOUND_TIME = "listener_bound_time_myt"
+        private const val KEY_LAST_SYNC_MYT = "last_successful_sync_myt"
+        private const val KEY_KEEP_ALIVE = "foreground_keep_alive_enabled"
+        private const val KEY_PENDING_QUEUE = "pending_sync_queue_json"
+        private const val KEY_DEDUPE_ENTRIES = "recent_dedupe_entries_json"
+
         private const val KEY_REDACT_LOCAL = "local_redact"
         private const val KEY_WECHAT_ENABLED = "local_wechat_enabled"
         private const val KEY_WHATSAPP_ENABLED = "local_whatsapp_enabled"
         private const val KEY_BLOCKED_SENDERS = "local_blocked_senders"
+
+        private const val MAX_QUEUE_SIZE = 50
+        private const val DEDUPE_TTL_MS = 10 * 60 * 1000L
+        private const val MAX_DEDUPE_ENTRIES = 120
     }
 
     fun getBackendUrl(): String {
         val saved = prefs.getString(KEY_BACKEND_URL, null)?.trim()
-        return if (!saved.isNullOrBlank()) saved.trimEnd('/') else BuildConfig.DEFAULT_BACKEND_URL.trimEnd('/')
+        val raw = if (!saved.isNullOrBlank()) saved else BuildConfig.DEFAULT_BACKEND_URL.trim()
+        return raw.trimEnd('/')
     }
 
-    fun setBackendUrl(url: String) {
-        val clean = url.trim().trimEnd('/')
-        if (clean.startsWith("https://") || clean.startsWith("http://")) {
-            prefs.edit().putString(KEY_BACKEND_URL, clean).apply()
+    fun getRecentBackendUrls(): List<String> {
+        val raw = prefs.getString(KEY_RECENT_URLS, null)
+        val stored = if (!raw.isNullOrBlank()) {
+            runCatching { json.decodeFromString<List<String>>(raw) }.getOrDefault(emptyList())
+        } else {
+            emptyList()
         }
+        val builtInDefault = BuildConfig.DEFAULT_BACKEND_URL.trim().trimEnd('/')
+        return (stored + listOfNotNull(builtInDefault.takeIf { it.isNotBlank() }))
+            .map { it.trim().trimEnd('/') }
+            .filter { it.isNotBlank() }
+            .distinct()
+            .take(4)
+    }
+
+    private fun recordRecentUrl(cleanUrl: String) {
+        val updated = (listOf(cleanUrl) + getRecentBackendUrls())
+            .distinct()
+            .take(4)
+        runCatching {
+            prefs.edit().putString(KEY_RECENT_URLS, json.encodeToString(updated)).apply()
+        }
+    }
+
+    fun normalizeBackendUrl(rawUrl: String): Result<String> {
+        val trimmed = rawUrl.trim()
+        if (trimmed.isBlank()) {
+            return Result.failure(IllegalArgumentException("Backend URL cannot be empty."))
+        }
+
+        val withScheme = when {
+            trimmed.startsWith("https://", ignoreCase = true) ->
+                "https://" + trimmed.substring(8)
+            trimmed.startsWith("http://", ignoreCase = true) ->
+                "http://" + trimmed.substring(7)
+            trimmed.startsWith("localhost", ignoreCase = true) ||
+                trimmed.startsWith("127.0.0.1") ||
+                trimmed.startsWith("10.0.2.2") ->
+                "http://$trimmed"
+            else ->
+                "https://$trimmed"
+        }
+
+        val strippedApi = withScheme
+            .trimEnd('/')
+            .replace(Regex("/api(?:/.*)?$"), "")
+            .trimEnd('/')
+
+        val parsed = strippedApi.toHttpUrlOrNull()
+            ?: return Result.failure(IllegalArgumentException("Invalid URL format. Example: https://your-service.run.app"))
+
+        val localHosts = setOf("10.0.2.2", "127.0.0.1", "localhost")
+        if (parsed.scheme == "http" && parsed.host.lowercase() !in localHosts) {
+            return Result.failure(
+                IllegalArgumentException(
+                    "Android blocks unencrypted http:// for remote servers. Use https:// (or http:// only for 10.0.2.2 / localhost)."
+                )
+            )
+        }
+
+        val portSuffix = if (
+            (parsed.scheme == "https" && parsed.port != 443) ||
+            (parsed.scheme == "http" && parsed.port != 80)
+        ) {
+            ":${parsed.port}"
+        } else {
+            ""
+        }
+
+        val basePath = parsed.encodedPath.trimEnd('/')
+        val clean = "${parsed.scheme}://${parsed.host}$portSuffix$basePath".trimEnd('/')
+        return Result.success(clean)
+    }
+
+    fun saveBackendUrl(rawUrl: String): Result<String> {
+        val normalized = normalizeBackendUrl(rawUrl)
+        normalized.onSuccess { clean ->
+            val previous = getBackendUrl()
+            val editor = prefs.edit().putString(KEY_BACKEND_URL, clean)
+            if (previous != clean) {
+                editor.remove(KEY_AUTH_TOKEN)
+            }
+            editor.apply()
+            recordRecentUrl(clean)
+        }
+        return normalized
+    }
+
+    fun getAuthToken(): String? {
+        return prefs.getString(KEY_AUTH_TOKEN, null)?.trim()?.takeIf { it.isNotEmpty() }
+    }
+
+    fun setAuthToken(token: String) {
+        prefs.edit().putString(KEY_AUTH_TOKEN, token.trim()).apply()
+    }
+
+    fun clearAuthToken() {
+        prefs.edit().remove(KEY_AUTH_TOKEN).apply()
     }
 
     fun getLanguage(): String {
@@ -38,6 +161,32 @@ class PrefsStore(context: Context) {
     fun setLanguage(lang: String) {
         prefs.edit().putString(KEY_LANGUAGE, lang).apply()
     }
+
+    fun isKeepAliveEnabled(): Boolean = prefs.getBoolean(KEY_KEEP_ALIVE, false)
+
+    fun setKeepAliveEnabled(enabled: Boolean) {
+        prefs.edit().putBoolean(KEY_KEEP_ALIVE, enabled).apply()
+    }
+
+    fun setListenerServiceBound(bound: Boolean, timestampMYT: String? = null) {
+        val editor = prefs.edit().putBoolean(KEY_LISTENER_BOUND, bound)
+        if (!timestampMYT.isNullOrBlank()) {
+            editor.putString(KEY_LISTENER_BOUND_TIME, timestampMYT)
+        }
+        editor.apply()
+    }
+
+    fun isListenerServiceBound(): Boolean = prefs.getBoolean(KEY_LISTENER_BOUND, false)
+
+    fun getLastListenerBoundTimeMYT(): String? =
+        prefs.getString(KEY_LISTENER_BOUND_TIME, null)?.takeIf { it.isNotBlank() }
+
+    fun setLastSyncTimeMYT(timestampMYT: String) {
+        prefs.edit().putString(KEY_LAST_SYNC_MYT, timestampMYT).apply()
+    }
+
+    fun getLastSyncTimeMYT(): String? =
+        prefs.getString(KEY_LAST_SYNC_MYT, null)?.takeIf { it.isNotBlank() }
 
     fun getCachedState(): SecretaryState? {
         val raw = prefs.getString(KEY_CACHED_STATE, null) ?: return null
@@ -54,6 +203,133 @@ class PrefsStore(context: Context) {
                 .putBoolean(KEY_WHATSAPP_ENABLED, state.privacy.enabledSources["whatsapp"] ?: true)
                 .putStringSet(KEY_BLOCKED_SENDERS, state.privacy.blockedSenders.map { it.lowercase() }.toSet())
                 .apply()
+        }
+    }
+
+    fun saveListenerDiagnostic(diag: ListenerDiagnostic) {
+        synchronized(queueLock) {
+            runCatching {
+                prefs.edit().putString(KEY_LISTENER_DIAG, json.encodeToString(diag)).apply()
+            }
+        }
+    }
+
+    fun getListenerDiagnostic(): ListenerDiagnostic? {
+        val raw = prefs.getString(KEY_LISTENER_DIAG, null) ?: return null
+        return runCatching { json.decodeFromString<ListenerDiagnostic>(raw) }.getOrNull()
+    }
+
+    fun getAllChannelStats(): Map<String, ChannelStats> {
+        val raw = prefs.getString(KEY_CHANNEL_STATS, null) ?: return emptyMap()
+        return runCatching { json.decodeFromString<Map<String, ChannelStats>>(raw) }.getOrDefault(emptyMap())
+    }
+
+    fun recordChannelEvent(
+        source: String,
+        timestampMYT: String,
+        sender: String,
+        status: String,
+        detail: String,
+        syncedSuccess: Boolean = false
+    ) {
+        synchronized(queueLock) {
+            val current = getAllChannelStats().toMutableMap()
+            val prev = current[source] ?: ChannelStats(source = source)
+            val updated = prev.copy(
+                source = source,
+                lastCaptureMYT = timestampMYT,
+                lastSyncMYT = if (syncedSuccess) timestampMYT else prev.lastSyncMYT,
+                lastSender = sender,
+                lastStatus = status,
+                lastDetail = detail.take(180),
+                syncedCount = if (syncedSuccess) prev.syncedCount + 1 else prev.syncedCount
+            )
+            current[source] = updated
+            runCatching {
+                prefs.edit().putString(KEY_CHANNEL_STATS, json.encodeToString(current)).apply()
+            }
+        }
+    }
+
+    fun isDuplicateOrInQueue(dedupeKey: String): Boolean {
+        synchronized(queueLock) {
+            val nowMs = System.currentTimeMillis()
+            val entries = loadDedupeEntriesLocked().filterValues { (nowMs - it) < DEDUPE_TTL_MS }
+            if (dedupeKey in entries) return true
+            val queue = getPendingSyncQueueLocked()
+            return queue.any { it.dedupeKey == dedupeKey }
+        }
+    }
+
+    fun markDedupeSynced(dedupeKey: String) {
+        synchronized(queueLock) {
+            val nowMs = System.currentTimeMillis()
+            val filtered = loadDedupeEntriesLocked()
+                .filterValues { (nowMs - it) < DEDUPE_TTL_MS }
+                .toMutableMap()
+            filtered[dedupeKey] = nowMs
+            val trimmed = if (filtered.size > MAX_DEDUPE_ENTRIES) {
+                filtered.entries.sortedByDescending { it.value }.take(MAX_DEDUPE_ENTRIES)
+                    .associate { it.key to it.value }
+            } else {
+                filtered
+            }
+            runCatching {
+                prefs.edit().putString(KEY_DEDUPE_ENTRIES, json.encodeToString(trimmed)).apply()
+            }
+        }
+    }
+
+    fun getPendingSyncQueue(): List<PendingSyncItem> {
+        synchronized(queueLock) {
+            return getPendingSyncQueueLocked()
+        }
+    }
+
+    fun enqueuePendingSync(item: PendingSyncItem): Boolean {
+        synchronized(queueLock) {
+            val queue = getPendingSyncQueueLocked().toMutableList()
+            if (queue.any { it.dedupeKey == item.dedupeKey }) return false
+            queue.add(item)
+            val bounded = if (queue.size > MAX_QUEUE_SIZE) queue.takeLast(MAX_QUEUE_SIZE) else queue
+            savePendingQueueLocked(bounded)
+            return true
+        }
+    }
+
+    fun removePendingSync(id: String) {
+        synchronized(queueLock) {
+            val updated = getPendingSyncQueueLocked().filterNot { it.id == id }
+            savePendingQueueLocked(updated)
+        }
+    }
+
+    fun markPendingRetryFailure(id: String, error: String) {
+        synchronized(queueLock) {
+            val updated = getPendingSyncQueueLocked().map { item ->
+                if (item.id == id) {
+                    item.copy(retryCount = item.retryCount + 1, lastError = error.take(160))
+                } else {
+                    item
+                }
+            }
+            savePendingQueueLocked(updated)
+        }
+    }
+
+    private fun loadDedupeEntriesLocked(): Map<String, Long> {
+        val raw = prefs.getString(KEY_DEDUPE_ENTRIES, null) ?: return emptyMap()
+        return runCatching { json.decodeFromString<Map<String, Long>>(raw) }.getOrDefault(emptyMap())
+    }
+
+    private fun getPendingSyncQueueLocked(): List<PendingSyncItem> {
+        val raw = prefs.getString(KEY_PENDING_QUEUE, null) ?: return emptyList()
+        return runCatching { json.decodeFromString<List<PendingSyncItem>>(raw) }.getOrDefault(emptyList())
+    }
+
+    private fun savePendingQueueLocked(items: List<PendingSyncItem>) {
+        runCatching {
+            prefs.edit().putString(KEY_PENDING_QUEUE, json.encodeToString(items)).apply()
         }
     }
 

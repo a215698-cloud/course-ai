@@ -1,27 +1,45 @@
-import fs from 'fs/promises';
+import fs from 'fs';
+import fsp from 'fs/promises';
 import path from 'path';
 import crypto from 'crypto';
+import { DatabaseSync } from 'node:sqlite';
 import {
-  DailyBriefing,
   IngestedMessage,
-  MessageSource,
   PersonalMemory,
   PrivacySettings,
   ScheduleChangeAlert,
   SecretaryState,
   SecretaryTask,
 } from '../src/types/secretary.ts';
+import { addDaysIsoMYT, getKualaLumpurParts, KUALA_LUMPUR_TZ } from './timezone.ts';
 
-const DATA_DIR = path.resolve(process.cwd(), 'data');
-const STORE_PATH = path.resolve(DATA_DIR, 'secretary-store.json');
+const DATA_DIR = path.resolve(process.env.KAIRO_DATA_DIR || path.resolve(process.cwd(), 'data'));
+const DB_PATH = path.resolve(DATA_DIR, 'kairo-secretary.db');
+const LEGACY_JSON_PATH = path.resolve(DATA_DIR, 'secretary-store.json');
 
-function addDaysIso(offsetDays: number): string {
-  const d = new Date();
-  d.setDate(d.getDate() + offsetDays);
-  const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
+let dbInstance: DatabaseSync | null = null;
+let writeQueue: Promise<void> = Promise.resolve();
+
+function getDb(): DatabaseSync {
+  if (dbInstance) return dbInstance;
+  fs.mkdirSync(DATA_DIR, { recursive: true });
+  const db = new DatabaseSync(DB_PATH);
+  db.exec(`
+    PRAGMA journal_mode = WAL;
+    PRAGMA synchronous = NORMAL;
+    CREATE TABLE IF NOT EXISTS workspace_state (
+      id INTEGER PRIMARY KEY CHECK (id = 1),
+      state_json TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );
+    CREATE TABLE IF NOT EXISTS auth_config (
+      id INTEGER PRIMARY KEY CHECK (id = 1),
+      passcode_hash TEXT NOT NULL,
+      claimed_at TEXT NOT NULL
+    );
+  `);
+  dbInstance = db;
+  return db;
 }
 
 export function createId(prefix: string): string {
@@ -44,11 +62,11 @@ export function redactSensitiveText(input: string): string {
 }
 
 export function buildDefaultState(): SecretaryState {
-  const today = addDaysIso(0);
-  const tomorrow = addDaysIso(1);
-  const plus2 = addDaysIso(2);
-  const plus4 = addDaysIso(4);
-  const nowIso = new Date().toISOString();
+  const today = addDaysIsoMYT(0);
+  const tomorrow = addDaysIsoMYT(1);
+  const plus2 = addDaysIsoMYT(2);
+  const plus4 = addDaysIsoMYT(4);
+  const nowIso = getKualaLumpurParts().isoOffset;
 
   const sampleMessages: IngestedMessage[] = [
     {
@@ -295,44 +313,71 @@ export function buildDefaultState(): SecretaryState {
   };
 }
 
-let writeQueue: Promise<void> = Promise.resolve();
-
-async function ensureDataDir(): Promise<void> {
-  await fs.mkdir(DATA_DIR, { recursive: true });
-}
-
 export async function readStore(): Promise<SecretaryState> {
-  await ensureDataDir();
+  const db = getDb();
+  const row = db.prepare('SELECT state_json FROM workspace_state WHERE id = 1').get() as { state_json?: string } | undefined;
+  if (row?.state_json) {
+    return JSON.parse(row.state_json) as SecretaryState;
+  }
+
+  // Attempt one-time migration from legacy JSON file if present
   try {
-    const raw = await fs.readFile(STORE_PATH, 'utf-8');
-    const parsed = JSON.parse(raw) as SecretaryState;
+    const legacyRaw = await fsp.readFile(LEGACY_JSON_PATH, 'utf-8');
+    const parsed = JSON.parse(legacyRaw) as SecretaryState;
+    await writeStore(parsed);
     return parsed;
-  } catch (err: unknown) {
-    const code = (err as NodeJS.ErrnoException)?.code;
-    if (code === 'ENOENT') {
-      const initial = buildDefaultState();
-      await writeStore(initial);
-      return initial;
-    }
-    throw err;
+  } catch {
+    const initial = buildDefaultState();
+    await writeStore(initial);
+    return initial;
   }
 }
 
 export async function writeStore(nextState: SecretaryState): Promise<SecretaryState> {
   writeQueue = writeQueue.then(async () => {
-    await ensureDataDir();
-    const tmpPath = path.resolve(DATA_DIR, `secretary-store.${crypto.randomBytes(4).toString('hex')}.tmp`);
-    await fs.writeFile(tmpPath, JSON.stringify(nextState, null, 2), 'utf-8');
-    await fs.rename(tmpPath, STORE_PATH);
+    const db = getDb();
+    const nowIso = getKualaLumpurParts().isoOffset;
+    db.prepare(
+      `INSERT INTO workspace_state (id, state_json, updated_at)
+       VALUES (1, ?, ?)
+       ON CONFLICT(id) DO UPDATE SET state_json = excluded.state_json, updated_at = excluded.updated_at`
+    ).run(JSON.stringify(nextState), nowIso);
   });
   await writeQueue;
   return nextState;
 }
 
-export async function mutateStore(updater: (current: SecretaryState) => SecretaryState | Promise<SecretaryState>): Promise<SecretaryState> {
+export async function mutateStore(
+  updater: (current: SecretaryState) => SecretaryState | Promise<SecretaryState>
+): Promise<SecretaryState> {
   const current = await readStore();
   const updated = await updater(current);
   return writeStore(updated);
+}
+
+export function getClaimedPasscodeHash(): string | null {
+  const db = getDb();
+  const row = db.prepare('SELECT passcode_hash FROM auth_config WHERE id = 1').get() as { passcode_hash?: string } | undefined;
+  return row?.passcode_hash || null;
+}
+
+export function claimPasscodeHashIfEmpty(passcodeHash: string): boolean {
+  const db = getDb();
+  const nowIso = getKualaLumpurParts().isoOffset;
+  const result = db
+    .prepare(
+      `INSERT OR IGNORE INTO auth_config (id, passcode_hash, claimed_at)
+       VALUES (1, ?, ?)`
+    )
+    .run(passcodeHash, nowIso);
+  return Number(result.changes) > 0;
+}
+
+export function getStorageInfo(): { engine: string; dbPath: string } {
+  return {
+    engine: 'sqlite',
+    dbPath: DB_PATH,
+  };
 }
 
 function escapeIcsText(value: string): string {
@@ -349,10 +394,13 @@ function formatIcsDateTime(dateStr: string, timeStr: string | null): { dtStart: 
     return { dtStart: compactDate, dtEnd: compactDate, isAllDay: true };
   }
   const [hh, mm] = timeStr.split(':').map(Number);
-  const start = new Date(`${dateStr}T${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}:00`);
+  const start = new Date(`${dateStr}T${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}:00+08:00`);
   const end = new Date(start.getTime() + 60 * 60 * 1000);
-  const fmt = (d: Date) =>
-    `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}T${String(d.getHours()).padStart(2, '0')}${String(d.getMinutes()).padStart(2, '0')}00`;
+  const fmt = (d: Date) => {
+    const p = getKualaLumpurParts(d);
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return `${p.year}${pad(p.month)}${pad(p.day)}T${pad(p.hour)}${pad(p.minute)}00`;
+  };
   return { dtStart: fmt(start), dtEnd: fmt(end), isAllDay: false };
 }
 
@@ -364,6 +412,16 @@ export function buildIcsFeed(tasks: SecretaryTask[]): string {
     'CALSCALE:GREGORIAN',
     'METHOD:PUBLISH',
     'X-WR-CALNAME:Kairo Secretary Schedule',
+    `X-WR-TIMEZONE:${KUALA_LUMPUR_TZ}`,
+    'BEGIN:VTIMEZONE',
+    `TZID:${KUALA_LUMPUR_TZ}`,
+    'BEGIN:STANDARD',
+    'DTSTART:19820101T000000',
+    'TZOFFSETFROM:+0800',
+    'TZOFFSETTO:+0800',
+    'TZNAME:MYT',
+    'END:STANDARD',
+    'END:VTIMEZONE',
   ];
 
   const dtStamp = new Date().toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
@@ -378,8 +436,8 @@ export function buildIcsFeed(tasks: SecretaryTask[]): string {
       lines.push(`DTSTART;VALUE=DATE:${dtStart}`);
       lines.push(`DTEND;VALUE=DATE:${dtEnd}`);
     } else {
-      lines.push(`DTSTART:${dtStart}`);
-      lines.push(`DTEND:${dtEnd}`);
+      lines.push(`DTSTART;TZID=${KUALA_LUMPUR_TZ}:${dtStart}`);
+      lines.push(`DTEND;TZID=${KUALA_LUMPUR_TZ}:${dtEnd}`);
     }
     lines.push(`SUMMARY:${escapeIcsText(`[${task.category.toUpperCase()}] ${task.title}`)}`);
     const descParts = [task.description];

@@ -4,6 +4,7 @@ import { Translations } from '../i18n/translations';
 
 interface AndroidBridgeViewProps {
   t: Translations;
+  authToken: string;
 }
 
 const COMPANION_FILES = [
@@ -13,7 +14,7 @@ const COMPANION_FILES = [
   'README.md',
 ] as const;
 
-export const AndroidBridgeView: React.FC<AndroidBridgeViewProps> = ({ t }) => {
+export const AndroidBridgeView: React.FC<AndroidBridgeViewProps> = ({ t, authToken }) => {
   const [selectedFile, setSelectedFile] = useState<string>(COMPANION_FILES[0]);
   const [fileContent, setFileContent] = useState<string>('');
   const [loading, setLoading] = useState(false);
@@ -22,7 +23,9 @@ export const AndroidBridgeView: React.FC<AndroidBridgeViewProps> = ({ t }) => {
   useEffect(() => {
     let active = true;
     setLoading(true);
-    fetch(`/api/android-companion/${encodeURIComponent(selectedFile)}`)
+    fetch(`/api/android-companion/${encodeURIComponent(selectedFile)}`, {
+      headers: { Authorization: `Bearer ${authToken}` },
+    })
       .then((res) => res.json())
       .then((data) => {
         if (active && typeof data.content === 'string') {
@@ -38,7 +41,7 @@ export const AndroidBridgeView: React.FC<AndroidBridgeViewProps> = ({ t }) => {
     return () => {
       active = false;
     };
-  }, [selectedFile]);
+  }, [selectedFile, authToken]);
 
   const handleCopy = async () => {
     if (!fileContent) return;

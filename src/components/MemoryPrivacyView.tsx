@@ -15,6 +15,7 @@ interface MemoryPrivacyViewProps {
   onDeleteMemory: (id: string) => Promise<void>;
   onUpdatePrivacy: (patch: Partial<PrivacySettings>) => Promise<void>;
   onResetWorkspace: (mode: 'empty' | 'defaults') => Promise<void>;
+  onDownloadBackup: () => Promise<void>;
 }
 
 export const MemoryPrivacyView: React.FC<MemoryPrivacyViewProps> = ({
@@ -24,6 +25,7 @@ export const MemoryPrivacyView: React.FC<MemoryPrivacyViewProps> = ({
   onDeleteMemory,
   onUpdatePrivacy,
   onResetWorkspace,
+  onDownloadBackup,
 }) => {
   const [memKey, setMemKey] = useState('');
   const [memContent, setMemContent] = useState('');
@@ -258,14 +260,14 @@ export const MemoryPrivacyView: React.FC<MemoryPrivacyViewProps> = ({
             {t.memory.dataOwnership}
           </h3>
           <div className="flex flex-wrap items-center gap-3">
-            <a
-              href="/api/export"
-              download="kairo-secretary-backup.json"
+            <button
+              type="button"
+              onClick={() => void onDownloadBackup()}
               className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium rounded-lg border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 whitespace-nowrap"
             >
               <Download className="w-3.5 h-3.5" />
               {t.actions.exportBackup}
-            </a>
+            </button>
 
             {!confirmWipe ? (
               <button

@@ -1,8 +1,26 @@
 import { ImportanceLevel, MessageSource, SecretaryTask, UILanguage } from '../types/secretary';
 
+export const KUALA_LUMPUR_TZ = 'Asia/Kuala_Lumpur';
+
+export function getKualaLumpurDateParts(date: Date = new Date()): {
+  year: number;
+  month: number;
+  day: number;
+  isoDate: string;
+} {
+  const formatter = new Intl.DateTimeFormat('en-CA', {
+    timeZone: KUALA_LUMPUR_TZ,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  });
+  const isoDate = formatter.format(date);
+  const [y, m, d] = isoDate.split('-').map(Number);
+  return { year: y, month: m, day: d, isoDate };
+}
+
 export function getTodayIso(): string {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  return getKualaLumpurDateParts().isoDate;
 }
 
 export function getRelativeDeadlineLabel(
@@ -16,11 +34,14 @@ export function getRelativeDeadlineLabel(
   }
 
   const timePart = dueTime && /^\d{2}:\d{2}$/.test(dueTime) ? dueTime : '23:59';
-  const target = new Date(`${dueDate}T${timePart}:00`);
+  const target = new Date(`${dueDate}T${timePart}:00+08:00`);
   const now = new Date();
   const diffMs = target.getTime() - now.getTime();
   const diffHours = Math.round(diffMs / (1000 * 60 * 60));
-  const diffDays = Math.ceil((new Date(`${dueDate}T00:00:00`).getTime() - new Date(`${getTodayIso()}T00:00:00`).getTime()) / (1000 * 60 * 60 * 24));
+  const diffDays = Math.ceil(
+    (new Date(`${dueDate}T00:00:00+08:00`).getTime() - new Date(`${getTodayIso()}T00:00:00+08:00`).getTime()) /
+      (1000 * 60 * 60 * 24)
+  );
 
   if (diffMs < 0) {
     const absH = Math.abs(diffHours);
@@ -88,17 +109,17 @@ export function buildGoogleCalendarUrl(task: SecretaryTask): string {
     const cleanDate = task.dueDate.replace(/-/g, '');
     if (task.dueTime && /^\d{2}:\d{2}$/.test(task.dueTime)) {
       const [hh, mm] = task.dueTime.split(':').map(Number);
-      const start = new Date(`${task.dueDate}T${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}:00`);
+      const start = new Date(`${task.dueDate}T${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}:00+08:00`);
       const end = new Date(start.getTime() + 60 * 60 * 1000);
-      const fmt = (d: Date) =>
-        `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}T${String(d.getHours()).padStart(2, '0')}${String(d.getMinutes()).padStart(2, '0')}00`;
-      datesParam = `&dates=${fmt(start)}/${fmt(end)}`;
+      const fmtUtc = (d: Date) =>
+        `${d.getUTCFullYear()}${String(d.getUTCMonth() + 1).padStart(2, '0')}${String(d.getUTCDate()).padStart(2, '0')}T${String(d.getUTCHours()).padStart(2, '0')}${String(d.getUTCMinutes()).padStart(2, '0')}00Z`;
+      datesParam = `&dates=${fmtUtc(start)}/${fmtUtc(end)}`;
     } else {
       datesParam = `&dates=${cleanDate}/${cleanDate}`;
     }
   }
 
-  return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}${datesParam}&details=${details}&location=${location}`;
+  return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}${datesParam}&ctz=${encodeURIComponent(KUALA_LUMPUR_TZ)}&details=${details}&location=${location}`;
 }
 
 export function formatSourceName(source: MessageSource | 'assistant'): string {

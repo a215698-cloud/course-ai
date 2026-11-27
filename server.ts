@@ -4,20 +4,34 @@ import fs from 'fs/promises';
 import path from 'path';
 import { createServer as createViteServer } from 'vite';
 import {
+  AiServiceError,
   analyzeMessageWithAI,
   chatWithSecretaryAI,
   generateDailyBriefingAI,
+  isGeminiConfigured,
   runCrossMessageAnalysisAI,
 } from './server/ai.ts';
+import {
+  claimInitialPasscode,
+  extractBearerToken,
+  getEnvPasscode,
+  isAuthClaimed,
+  issueSessionToken,
+  requireAuth,
+  verifyAccessPasscode,
+  verifySessionToken,
+} from './server/auth.ts';
 import {
   buildDefaultState,
   buildIcsFeed,
   createId,
+  getStorageInfo,
   mutateStore,
   readStore,
   redactSensitiveText,
   writeStore,
 } from './server/store.ts';
+import { getKualaLumpurParts, KUALA_LUMPUR_TZ } from './server/timezone.ts';
 import {
   ChatMessage,
   DailyBriefing,
@@ -54,11 +68,79 @@ function getErrorMessage(err: unknown): string {
   return String(err);
 }
 
+function sendRouteError(res: Response, err: unknown): void {
+  if (err instanceof AiServiceError) {
+    res.status(err.statusCode).json({
+      error: err.message,
+      errorCode: err.errorCode,
+    });
+    return;
+  }
+  res.status(500).json({ error: getErrorMessage(err) });
+}
+
 async function startServer() {
   const app = express();
   app.use(express.json({ limit: '1mb' }));
 
-  app.get('/api/state', async (_req: Request, res: Response) => {
+  app.get('/api/health', (_req: Request, res: Response) => {
+    const kl = getKualaLumpurParts();
+    const storage = getStorageInfo();
+    res.json({
+      ok: true,
+      service: 'kairo-secretary',
+      timezone: KUALA_LUMPUR_TZ,
+      serverTimeMYT: kl.isoOffset,
+      aiConfigured: isGeminiConfigured(),
+      authRequired: true,
+      authClaimed: isAuthClaimed(),
+      envPasscodeConfigured: getEnvPasscode() !== null,
+      storageEngine: storage.engine,
+    });
+  });
+
+  app.get('/api/auth/status', (req: Request, res: Response) => {
+    const token = extractBearerToken(req);
+    const session = verifySessionToken(token);
+    res.json({
+      authRequired: true,
+      claimed: isAuthClaimed(),
+      envOverride: getEnvPasscode() !== null,
+      authenticated: Boolean(session),
+    });
+  });
+
+  app.post('/api/auth/claim', (req: Request, res: Response) => {
+    const passcode = typeof req.body?.passcode === 'string' ? req.body.passcode.trim() : '';
+    const result = claimInitialPasscode(passcode);
+    if (!result.ok) {
+      return res.status(400).json({ error: result.error || 'Unable to claim workspace passcode.' });
+    }
+    const token = issueSessionToken('workspace-owner');
+    res.status(201).json({
+      token,
+      claimed: true,
+      authenticated: true,
+    });
+  });
+
+  app.post('/api/auth/login', (req: Request, res: Response) => {
+    if (!isAuthClaimed()) {
+      return res.status(400).json({ error: 'Workspace passcode is not set yet. Claim a passcode first.' });
+    }
+    const passcode = typeof req.body?.passcode === 'string' ? req.body.passcode.trim() : '';
+    if (!passcode || !verifyAccessPasscode(passcode)) {
+      return res.status(401).json({ error: 'Incorrect workspace passcode.' });
+    }
+    const token = issueSessionToken('workspace-owner');
+    res.json({
+      token,
+      claimed: true,
+      authenticated: true,
+    });
+  });
+
+  app.get('/api/state', requireAuth, async (_req: Request, res: Response) => {
     try {
       const state = await readStore();
       res.json(state);
@@ -67,7 +149,7 @@ async function startServer() {
     }
   });
 
-  app.post('/api/messages/ingest', async (req: Request, res: Response) => {
+  app.post('/api/messages/ingest', requireAuth, async (req: Request, res: Response) => {
     try {
       const body = req.body ?? {};
       const source = typeof body.source === 'string' && VALID_SOURCES.has(body.source as MessageSource)
@@ -78,7 +160,7 @@ async function startServer() {
       const rawText = typeof body.rawText === 'string' ? body.rawText.trim() : '';
       const receivedAt = typeof body.receivedAt === 'string' && !Number.isNaN(Date.parse(body.receivedAt))
         ? body.receivedAt
-        : new Date().toISOString();
+        : getKualaLumpurParts().isoOffset;
       const uiLanguage = asUiLanguage(body.uiLanguage);
 
       if (!rawText || rawText.length > 10000) {
@@ -111,13 +193,14 @@ async function startServer() {
         source,
         sender,
         chatTitle,
+        receivedAt,
         uiLanguage,
         existingTasks: currentState.tasks,
         memories: currentState.memories,
       });
 
       const messageId = createId('msg');
-      const nowIso = new Date().toISOString();
+      const nowIso = getKualaLumpurParts().isoOffset;
 
       const createdTasks: SecretaryTask[] = (aiResult.extractedTasks || []).map((t) => ({
         id: createId('task'),
@@ -189,11 +272,11 @@ async function startServer() {
         state: nextState,
       });
     } catch (err) {
-      res.status(500).json({ error: getErrorMessage(err) });
+      sendRouteError(res, err);
     }
   });
 
-  app.post('/api/messages/load-samples', async (req: Request, res: Response) => {
+  app.post('/api/messages/load-samples', requireAuth, async (req: Request, res: Response) => {
     try {
       const uiLanguage = asUiLanguage(req.body?.uiLanguage);
       const defaults = buildDefaultState();
@@ -238,7 +321,7 @@ async function startServer() {
           memories: currentState.memories,
         });
         const msgId = createId('msg');
-        const nowIso = new Date().toISOString();
+        const nowIso = getKualaLumpurParts().isoOffset;
         const tasks = (aiResult.extractedTasks || []).map((t) => ({
           id: createId('task'),
           title: t.title,
@@ -303,11 +386,11 @@ async function startServer() {
 
       res.json({ addedCount: newMessages.length, state: nextState });
     } catch (err) {
-      res.status(500).json({ error: getErrorMessage(err) });
+      sendRouteError(res, err);
     }
   });
 
-  app.patch('/api/messages/:id/read', async (req: Request, res: Response) => {
+  app.patch('/api/messages/:id/read', requireAuth, async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
       const read = typeof req.body?.read === 'boolean' ? req.body.read : true;
@@ -321,7 +404,7 @@ async function startServer() {
     }
   });
 
-  app.delete('/api/messages/:id', async (req: Request, res: Response) => {
+  app.delete('/api/messages/:id', requireAuth, async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
       const nextState = await mutateStore((state) => ({
@@ -334,14 +417,14 @@ async function startServer() {
     }
   });
 
-  app.post('/api/tasks', async (req: Request, res: Response) => {
+  app.post('/api/tasks', requireAuth, async (req: Request, res: Response) => {
     try {
       const body = req.body ?? {};
       const title = typeof body.title === 'string' ? body.title.trim().slice(0, 180) : '';
       if (!title) {
         return res.status(400).json({ error: 'Task title is required.' });
       }
-      const nowIso = new Date().toISOString();
+      const nowIso = getKualaLumpurParts().isoOffset;
       const newTask: SecretaryTask = {
         id: createId('task'),
         title,
@@ -370,11 +453,11 @@ async function startServer() {
     }
   });
 
-  app.patch('/api/tasks/:id', async (req: Request, res: Response) => {
+  app.patch('/api/tasks/:id', requireAuth, async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
       const body = req.body ?? {};
-      const nowIso = new Date().toISOString();
+      const nowIso = getKualaLumpurParts().isoOffset;
       const nextState = await mutateStore((state) => ({
         ...state,
         tasks: state.tasks.map((task) => {
@@ -399,7 +482,7 @@ async function startServer() {
     }
   });
 
-  app.delete('/api/tasks/:id', async (req: Request, res: Response) => {
+  app.delete('/api/tasks/:id', requireAuth, async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
       const nextState = await mutateStore((state) => ({
@@ -412,10 +495,10 @@ async function startServer() {
     }
   });
 
-  app.post('/api/schedule-changes/:id/apply', async (req: Request, res: Response) => {
+  app.post('/api/schedule-changes/:id/apply', requireAuth, async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
-      const nowIso = new Date().toISOString();
+      const nowIso = getKualaLumpurParts().isoOffset;
       const nextState = await mutateStore((state) => {
         const change = state.scheduleChanges.find((c) => c.id === id);
         if (!change) return state;
@@ -468,7 +551,7 @@ async function startServer() {
     }
   });
 
-  app.post('/api/schedule-changes/:id/dismiss', async (req: Request, res: Response) => {
+  app.post('/api/schedule-changes/:id/dismiss', requireAuth, async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
       const nextState = await mutateStore((state) => ({
@@ -481,12 +564,12 @@ async function startServer() {
     }
   });
 
-  app.post('/api/ai/cross-analyze', async (req: Request, res: Response) => {
+  app.post('/api/ai/cross-analyze', requireAuth, async (req: Request, res: Response) => {
     try {
       const uiLanguage = asUiLanguage(req.body?.uiLanguage);
       const currentState = await readStore();
       const detected = await runCrossMessageAnalysisAI({ state: currentState, uiLanguage });
-      const nowIso = new Date().toISOString();
+      const nowIso = getKualaLumpurParts().isoOffset;
 
       const newAlerts: ScheduleChangeAlert[] = detected.map((d) => ({
         id: createId('chg'),
@@ -512,11 +595,11 @@ async function startServer() {
 
       res.json({ newAlertsCount: newAlerts.length, state: nextState });
     } catch (err) {
-      res.status(500).json({ error: getErrorMessage(err) });
+      sendRouteError(res, err);
     }
   });
 
-  app.post('/api/briefings/generate', async (req: Request, res: Response) => {
+  app.post('/api/briefings/generate', requireAuth, async (req: Request, res: Response) => {
     try {
       const uiLanguage = asUiLanguage(req.body?.uiLanguage);
       const currentState = await readStore();
@@ -524,7 +607,7 @@ async function startServer() {
       const briefing: DailyBriefing = {
         id: createId('brief'),
         ...generated,
-        generatedAt: new Date().toISOString(),
+        generatedAt: getKualaLumpurParts().isoOffset,
       };
       const nextState = await mutateStore((state) => ({
         ...state,
@@ -532,11 +615,11 @@ async function startServer() {
       }));
       res.json({ briefing, state: nextState });
     } catch (err) {
-      res.status(500).json({ error: getErrorMessage(err) });
+      sendRouteError(res, err);
     }
   });
 
-  app.post('/api/ai/chat', async (req: Request, res: Response) => {
+  app.post('/api/ai/chat', requireAuth, async (req: Request, res: Response) => {
     try {
       const message = typeof req.body?.message === 'string' ? req.body.message.trim() : '';
       const uiLanguage = asUiLanguage(req.body?.uiLanguage);
@@ -545,7 +628,7 @@ async function startServer() {
       }
       const currentState = await readStore();
       const aiReply = await chatWithSecretaryAI({ message, state: currentState, uiLanguage });
-      const nowIso = new Date().toISOString();
+      const nowIso = getKualaLumpurParts().isoOffset;
 
       const userMsg: ChatMessage = {
         id: createId('chat'),
@@ -557,7 +640,7 @@ async function startServer() {
         id: createId('chat'),
         role: 'assistant',
         content: aiReply.reply,
-        createdAt: new Date().toISOString(),
+        createdAt: getKualaLumpurParts().isoOffset,
         suggestedActions: aiReply.suggestedActions.map((a) => ({ ...a, applied: false })),
       };
 
@@ -568,14 +651,14 @@ async function startServer() {
 
       res.json({ state: nextState });
     } catch (err) {
-      res.status(500).json({ error: getErrorMessage(err) });
+      sendRouteError(res, err);
     }
   });
 
-  app.post('/api/ai/chat/apply-action', async (req: Request, res: Response) => {
+  app.post('/api/ai/chat/apply-action', requireAuth, async (req: Request, res: Response) => {
     try {
       const { chatMessageId, actionIndex } = req.body ?? {};
-      const nowIso = new Date().toISOString();
+      const nowIso = getKualaLumpurParts().isoOffset;
 
       const nextState = await mutateStore((state) => {
         const msg = state.chatHistory.find((m) => m.id === chatMessageId);
@@ -648,7 +731,7 @@ async function startServer() {
     }
   });
 
-  app.delete('/api/ai/chat', async (_req: Request, res: Response) => {
+  app.delete('/api/ai/chat', requireAuth, async (_req: Request, res: Response) => {
     try {
       const nextState = await mutateStore((state) => ({ ...state, chatHistory: [] }));
       res.json(nextState);
@@ -657,7 +740,7 @@ async function startServer() {
     }
   });
 
-  app.post('/api/memories', async (req: Request, res: Response) => {
+  app.post('/api/memories', requireAuth, async (req: Request, res: Response) => {
     try {
       const body = req.body ?? {};
       const key = typeof body.key === 'string' ? body.key.trim().slice(0, 120) : '';
@@ -670,7 +753,7 @@ async function startServer() {
           ? body.category
           : 'fact'
       ) as PersonalMemory['category'];
-      const nowIso = new Date().toISOString();
+      const nowIso = getKualaLumpurParts().isoOffset;
       const memory: PersonalMemory = {
         id: createId('mem'),
         category,
@@ -690,7 +773,7 @@ async function startServer() {
     }
   });
 
-  app.delete('/api/memories/:id', async (req: Request, res: Response) => {
+  app.delete('/api/memories/:id', requireAuth, async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
       const nextState = await mutateStore((state) => ({
@@ -703,7 +786,7 @@ async function startServer() {
     }
   });
 
-  app.patch('/api/privacy', async (req: Request, res: Response) => {
+  app.patch('/api/privacy', requireAuth, async (req: Request, res: Response) => {
     try {
       const patch = req.body as Partial<PrivacySettings>;
       const nextState = await mutateStore((state) => ({
@@ -736,7 +819,7 @@ async function startServer() {
     }
   });
 
-  app.get('/api/calendar/export.ics', async (_req: Request, res: Response) => {
+  app.get('/api/calendar/export.ics', requireAuth, async (_req: Request, res: Response) => {
     try {
       const state = await readStore();
       const ics = buildIcsFeed(state.tasks);
@@ -748,7 +831,7 @@ async function startServer() {
     }
   });
 
-  app.get('/api/export', async (_req: Request, res: Response) => {
+  app.get('/api/export', requireAuth, async (_req: Request, res: Response) => {
     try {
       const state = await readStore();
       res.setHeader('Content-Type', 'application/json; charset=utf-8');
@@ -759,7 +842,7 @@ async function startServer() {
     }
   });
 
-  app.post('/api/reset', async (req: Request, res: Response) => {
+  app.post('/api/reset', requireAuth, async (req: Request, res: Response) => {
     try {
       const mode = req.body?.mode === 'empty' ? 'empty' : 'defaults';
       if (mode === 'empty') {
@@ -783,7 +866,7 @@ async function startServer() {
     }
   });
 
-  app.get('/api/android-companion/:filename', async (req: Request, res: Response) => {
+  app.get('/api/android-companion/:filename', requireAuth, async (req: Request, res: Response) => {
     try {
       const filename = req.params.filename;
       if (!ALLOWED_COMPANION_FILES.has(filename)) {
@@ -798,6 +881,10 @@ async function startServer() {
     } catch (err) {
       res.status(500).json({ error: getErrorMessage(err) });
     }
+  });
+
+  app.use('/api', (_req: Request, res: Response) => {
+    res.status(404).json({ error: 'API endpoint not found.' });
   });
 
   if (process.env.NODE_ENV !== 'production') {
