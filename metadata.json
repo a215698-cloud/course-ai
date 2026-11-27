@@ -1,0 +1,6 @@
+{
+  "name": "Kairo AI Secretary",
+  "description": "Multilingual AI personal secretary supporting Chinese, English, and Malay for message summarization, task and deadline extraction, schedule change detection, personal memory, and calendar integration.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

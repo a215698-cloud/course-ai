@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.kairo.secretary">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <application
+        android:allowBackup="false"
+        android:label="Kairo AI Secretary">
+
+        <!--
+          Required Android NotificationListenerService declaration.
+          User must explicitly grant Notification Access in:
+          Settings > Apps > Special app access > Notification access
+        -->
+        <service
+            android:name=".notifications.SecretaryNotificationListenerService"
+            android:label="Kairo Authorized Message Listener"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService" />
+            </intent-filter>
+        </service>
+
+    </application>
+</manifest>
