@@ -1,0 +1,367 @@
+Run ./gradlew assembleDebug --no-daemon
+Downloading https://services.gradle.org/distributions/gradle-8.10.2-bin.zip
+.............10%.............20%.............30%.............40%.............50%.............60%.............70%.............80%.............90%.............100%
+Welcome to Gradle 8.10.2!
+Here are the highlights of this release:
+ - Support for Java 23
+ - Faster configuration cache
+ - Better configuration cache reports
+For more details see https://docs.gradle.org/8.10.2/release-notes.html
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.10.2/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build 
+> Task :app:preBuild UP-TO-DATE
+> Task :app:preDebugBuild UP-TO-DATE
+> Task :app:mergeDebugNativeDebugMetadata NO-SOURCE
+> Task :app:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :app:generateDebugBuildConfig
+> Task :app:generateDebugResValues
+> Task :app:checkDebugAarMetadata
+> Task :app:mapDebugSourceSetPaths
+> Task :app:generateDebugResources
+> Task :app:packageDebugResources
+> Task :app:mergeDebugResources
+> Task :app:createDebugCompatibleScreenManifests
+> Task :app:extractDeepLinksDebug
+> Task :app:parseDebugLocalResources
+> Task :app:processDebugMainManifest
+> Task :app:processDebugManifest
+> Task :app:processDebugManifestForPackage
+> Task :app:javaPreCompileDebug
+> Task :app:mergeDebugShaders
+> Task :app:compileDebugShaders NO-SOURCE
+> Task :app:generateDebugAssets UP-TO-DATE
+> Task :app:mergeDebugAssets
+> Task :app:compressDebugAssets
+> Task :app:desugarDebugFileDependencies
+> Task :app:processDebugResources
+> Task :app:checkDebugDuplicateClasses
+> Task :app:compileDebugKotlin
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/notifications/DeadlineNotifier.kt:17:28 Unresolved reference 'data'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/notifications/DeadlineNotifier.kt:87:57 Unresolved reference 'SecretaryTask'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/notifications/DeadlineNotifier.kt:90:58 Unresolved reference 'title'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/notifications/DeadlineNotifier.kt:92:26 Unresolved reference 'description'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/notifications/DeadlineNotifier.kt:92:64 Unresolved reference 'description'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/notifications/DeadlineNotifier.kt:93:27 Unresolved reference 'sourceSender'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/notifications/DeadlineNotifier.kt:95:44 Unresolved reference 'sourceApp'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/notifications/DeadlineNotifier.kt:95:63 Unresolved reference 'sourceSender'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/notifications/DeadlineNotifier.kt:99:23 Unresolved reference 'location'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/notifications/DeadlineNotifier.kt:99:103 Unresolved reference 'location'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/notifications/DeadlineNotifier.kt:101:32 Unresolved reference 'dueDate'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/notifications/DeadlineNotifier.kt:104:48 Argument type mismatch: actual type is 'kotlin.Any', but 'kotlin.CharSequence!' was expected.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/notifications/DeadlineNotifier.kt:105:40 Unresolved reference 'dueTime'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/notifications/DeadlineNotifier.kt:106:88 Argument type mismatch: actual type is 'kotlin.Any', but 'kotlin.CharSequence' was expected.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/notifications/DeadlineNotifier.kt:107:52 Argument type mismatch: actual type is 'kotlin.Any', but 'kotlin.CharSequence!' was expected.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/notifications/SecretaryNotificationListenerService.kt:6:28 Unresolved reference 'data'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/notifications/SecretaryNotificationListenerService.kt:7:28 Unresolved reference 'data'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/notifications/SecretaryNotificationListenerService.kt:8:28 Unresolved reference 'data'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/notifications/SecretaryNotificationListenerService.kt:9:28 Unresolved reference 'data'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/notifications/SecretaryNotificationListenerService.kt:25:38 Unresolved reference 'PrefsStore'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/notifications/SecretaryNotificationListenerService.kt:26:37 Unresolved reference 'SecretaryApiClient'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/notifications/SecretaryNotificationListenerService.kt:39:22 Unresolved reference 'PrefsStore'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/notifications/SecretaryNotificationListenerService.kt:40:21 Unresolved reference 'SecretaryApiClient'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/notifications/SecretaryNotificationListenerService.kt:61:25 Unresolved reference 'isSourceLocallyEnabled'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/notifications/SecretaryNotificationListenerService.kt:70:24 Unresolved reference 'isSenderLocallyBlocked'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/notifications/SecretaryNotificationListenerService.kt:80:39 Unresolved reference 'isLocalRedactEnabled'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/notifications/SecretaryNotificationListenerService.kt:80:63 Unresolved reference 'PiiRedactor'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/notifications/SecretaryNotificationListenerService.kt:82:23 Unresolved reference 'IngestRequest'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/notifications/SecretaryNotificationListenerService.kt:88:37 Unresolved reference 'getLanguage'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/notifications/SecretaryNotificationListenerService.kt:93:42 Unresolved reference 'ingestMessage'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/notifications/SecretaryNotificationListenerService.kt:94:33 Cannot infer type for this parameter. Please specify it explicitly.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/notifications/SecretaryNotificationListenerService.kt:94:37 Cannot infer type for this parameter. Please specify it explicitly.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/notifications/SecretaryNotificationListenerService.kt:94:50 Unresolved reference 'saveCachedState'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/notifications/SecretaryNotificationListenerService.kt:101:35 Unresolved reference 'id'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/notifications/SecretaryNotificationListenerService.kt:102:57 Unresolved reference 'title'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/notifications/SecretaryNotificationListenerService.kt:103:36 Unresolved reference 'summary'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/notifications/SecretaryNotificationListenerService.kt:105:48 Unresolved reference 'importance'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/notifications/SecretaryNotificationListenerService.kt:105:80 Unresolved reference 'importance'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/notifications/SecretaryNotificationListenerService.kt:108:35 Unresolved reference 'id'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/notifications/SecretaryNotificationListenerService.kt:109:40 Unresolved reference 'sender'.
+> Task :app:compileDebugKotlin FAILED
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/notifications/SecretaryNotificationListenerService.kt:110:36 Unresolved reference 'summary'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:59:28 Unresolved reference 'data'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:60:28 Unresolved reference 'data'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:72:27 Unresolved reference 'tasks'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:72:42 Unresolved reference 'it'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:73:31 Unresolved reference 'messages'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:73:49 Unresolved reference 'it'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:73:80 Unresolved reference 'it'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:74:32 Unresolved reference 'scheduleChanges'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:74:57 Unresolved reference 'it'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:75:32 Unresolved reference 'briefings'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:89:39 Function invocation 'size(...)' expected.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:95:43 Function invocation 'size(...)' expected.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:101:44 Function invocation 'size(...)' expected.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:140:47 Unresolved reference 'headline'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:146:47 Unresolved reference 'overview'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:150:40 Unresolved reference 'topPriorities'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:152:40 Unresolved reference 'topPriorities'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:152:71 Cannot infer type for this parameter. Please specify it explicitly.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:152:76 Cannot infer type for this parameter. Please specify it explicitly.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:153:29 @Composable invocations can only happen from the context of a @Composable function
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:154:47 Overload resolution ambiguity between candidates:
+fun String?.plus(other: Any?): String
+fun <T> Array<T>.plus(element: T): Array<T>
+fun ByteArray.plus(element: Byte): ByteArray
+fun IntArray.plus(element: Int): IntArray
+fun LongArray.plus(element: Long): LongArray
+fun ShortArray.plus(element: Short): ShortArray
+fun <T> Collection<T>.plus(element: T): List<T>
+fun <T> Iterable<T>.plus(element: T): List<T>
+fun <T> Set<T>.plus(element: T): Set<T>
+fun <T> Sequence<T>.plus(element: T): Sequence<T>
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:155:55 @Composable invocations can only happen from the context of a @Composable function
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:187:36 Overload resolution ambiguity between candidates:
+fun <T> Array<out T>.isEmpty(): Boolean
+fun BooleanArray.isEmpty(): Boolean
+fun ByteArray.isEmpty(): Boolean
+fun CharArray.isEmpty(): Boolean
+fun DoubleArray.isEmpty(): Boolean
+fun FloatArray.isEmpty(): Boolean
+fun IntArray.isEmpty(): Boolean
+fun LongArray.isEmpty(): Boolean
+fun ShortArray.isEmpty(): Boolean
+fun CharSequence.isEmpty(): Boolean
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:194:36 Overload resolution ambiguity between candidates:
+fun <T> Iterable<T>.forEach(action: (T) -> Unit): Unit
+fun <K, V> Map<out K, V>.forEach(action: (Map.Entry<K, V>) -> Unit): Unit
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:194:46 Cannot infer type for this parameter. Please specify it explicitly.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:195:25 @Composable invocations can only happen from the context of a @Composable function
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:196:41 Unresolved reference 'title'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:199:47 Unresolved reference 'summary'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:205:50 Unresolved reference 'previousValue'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:205:77 Unresolved reference 'newValue'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:212:86 Unresolved reference 'id'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:218:88 Unresolved reference 'id'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:241:25 Overload resolution ambiguity between candidates:
+fun <T> Array<out T>.take(n: Int): List<T>
+fun BooleanArray.take(n: Int): List<Boolean>
+fun ByteArray.take(n: Int): List<Byte>
+fun CharArray.take(n: Int): List<Char>
+fun DoubleArray.take(n: Int): List<Double>
+fun FloatArray.take(n: Int): List<Float>
+fun IntArray.take(n: Int): List<Int>
+fun LongArray.take(n: Int): List<Long>
+fun ShortArray.take(n: Int): List<Short>
+fun <T> Iterable<T>.take(n: Int): List<T>
+fun UByteArray.take(n: Int): List<UByte>
+fun UIntArray.take(n: Int): List<UInt>
+fun ULongArray.take(n: Int): List<ULong>
+fun UShortArray.take(n: Int): List<UShort>
+fun <T> Sequence<T>.take(n: Int): Sequence<T>
+fun CharSequence.take(n: Int): CharSequence
+fun String.take(n: Int): String
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:241:45 Unresolved reference 'id'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:244:62 Unresolved reference 'id'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:245:56 Unresolved reference 'id'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:260:28 Cannot infer type for this parameter. Please specify it explicitly.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:260:28 Not enough information to infer type argument for 'T'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:260:37 Cannot infer type for this parameter. Please specify it explicitly.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:260:54 Unresolved reference 'IngestedMessage'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:260:72 Null cannot be a value of a non-null type 'T'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:262:43 Unresolved reference 'messages'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:262:61 Cannot infer type for this parameter. Please specify it explicitly.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:264:30 Unresolved reference 'importance'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:264:60 Unresolved reference 'importance'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:265:28 Unresolved reference 'read'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:268:15 Unresolved reference 'sender'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:269:15 Unresolved reference 'summary'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:270:15 Unresolved reference 'redactedText'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:323:40 Unresolved reference 'id'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:327:34 Unresolved reference 'read'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:327:70 Unresolved reference 'id'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:335:43 Unresolved reference 'importance'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:335:75 Unresolved reference 'source'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:335:103 Unresolved reference 'detectedLanguages'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:337:45 Unresolved reference 'importance'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:340:69 Unresolved reference 'id'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:348:36 Unresolved reference 'sender'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:348:46 Argument type mismatch: actual type is 'R?', but 'K?' was expected.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:348:50 Unresolved reference 'chatTitle'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:348:61 Cannot infer type for this parameter. Please specify it explicitly.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:348:65 Cannot infer type for this parameter. Please specify it explicitly.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:348:81 Argument type mismatch: actual type is 'kotlin.String', but 'K' was expected.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:350:46 Unresolved reference 'read'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:354:36 Unresolved reference 'summary'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:365:22 Cannot infer type for this parameter. Please specify it explicitly.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:365:22 Unresolved reference. None of the following candidates is applicable because of a receiver type mismatch:
+fun <T, R> T.let(block: (T) -> R): R
+    [R|Contract description]
+     <
+        CallsInPlace(block, EXACTLY_ONCE)
+    >
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:365:28 Cannot infer type for this parameter. Please specify it explicitly.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:366:9 @Composable invocations can only happen from the context of a @Composable function
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:368:32 Unresolved reference 'sender'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:372:39 Unresolved reference 'source'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:372:67 Unresolved reference 'importance'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:376:30 Unresolved reference 'summary'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:377:29 Unresolved reference 'entities'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:377:64 Unresolved reference 'entities'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:379:33 Unresolved reference 'entities'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:380:48 Unresolved reference 'entities'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:382:33 Unresolved reference 'entities'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:382:48 Overload resolution ambiguity between candidates:
+fun <T> Array<out T>.isNotEmpty(): Boolean
+fun BooleanArray.isNotEmpty(): Boolean
+fun ByteArray.isNotEmpty(): Boolean
+fun CharArray.isNotEmpty(): Boolean
+fun DoubleArray.isNotEmpty(): Boolean
+fun FloatArray.isNotEmpty(): Boolean
+fun IntArray.isNotEmpty(): Boolean
+fun LongArray.isNotEmpty(): Boolean
+fun ShortArray.isNotEmpty(): Boolean
+fun <T> Collection<T>.isNotEmpty(): Boolean
+fun <K, V> Map<out K, V>.isNotEmpty(): Boolean
+fun CharSequence.isNotEmpty(): Boolean
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:383:48 Unresolved reference 'entities'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:383:63 Overload resolution ambiguity between candidates:
+fun <T> Array<out T>.joinToString(separator: CharSequence = ..., prefix: CharSequence = ..., postfix: CharSequence = ..., limit: Int = ..., truncated: CharSequence = ..., transform: ((T) -> CharSequence)? = ...): String
+fun BooleanArray.joinToString(separator: CharSequence = ..., prefix: CharSequence = ..., postfix: CharSequence = ..., limit: Int = ..., truncated: CharSequence = ..., transform: ((Boolean) -> CharSequence)? = ...): String
+fun ByteArray.joinToString(separator: CharSequence = ..., prefix: CharSequence = ..., postfix: CharSequence = ..., limit: Int = ..., truncated: CharSequence = ..., transform: ((Byte) -> CharSequence)? = ...): String
+fun CharArray.joinToString(separator: CharSequence = ..., prefix: CharSequence = ..., postfix: CharSequence = ..., limit: Int = ..., truncated: CharSequence = ..., transform: ((Char) -> CharSequence)? = ...): String
+fun DoubleArray.joinToString(separator: CharSequence = ..., prefix: CharSequence = ..., postfix: CharSequence = ..., limit: Int = ..., truncated: CharSequence = ..., transform: ((Double) -> CharSequence)? = ...): String
+fun FloatArray.joinToString(separator: CharSequence = ..., prefix: CharSequence = ..., postfix: CharSequence = ..., limit: Int = ..., truncated: CharSequence = ..., transform: ((Float) -> CharSequence)? = ...): String
+fun IntArray.joinToString(separator: CharSequence = ..., prefix: CharSequence = ..., postfix: CharSequence = ..., limit: Int = ..., truncated: CharSequence = ..., transform: ((Int) -> CharSequence)? = ...): String
+fun LongArray.joinToString(separator: CharSequence = ..., prefix: CharSequence = ..., postfix: CharSequence = ..., limit: Int = ..., truncated: CharSequence = ..., transform: ((Long) -> CharSequence)? = ...): String
+fun ShortArray.joinToString(separator: CharSequence = ..., prefix: CharSequence = ..., postfix: CharSequence = ..., limit: Int = ..., truncated: CharSequence = ..., transform: ((Short) -> CharSequence)? = ...): String
+fun <T> Iterable<T>.joinToString(separator: CharSequence = ..., prefix: CharSequence = ..., postfix: CharSequence = ..., limit: Int = ..., truncated: CharSequence = ..., transform: ((T) -> CharSequence)? = ...): String
+fun <T> Sequence<T>.joinToString(separator: CharSequence = ..., prefix: CharSequence = ..., postfix: CharSequence = ..., limit: Int = ..., truncated: CharSequence = ..., transform: ((T) -> CharSequence)? = ...): String
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:385:33 Unresolved reference 'entities'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:386:52 Unresolved reference 'entities'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:391:36 Unresolved reference 'redactedText'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:416:43 Unresolved reference 'tasks'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:416:58 Cannot infer type for this parameter. Please specify it explicitly.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:417:34 Unresolved reference 'status'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:417:66 Unresolved reference 'status'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:418:35 Operator '==' cannot be applied to 'kotlin.text.CharCategory' and 'kotlin.String'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:448:40 Unresolved reference 'id'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:451:66 Unresolved reference 'id'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:451:75 Unresolved reference 'status'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:452:60 Unresolved reference 'id'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:478:42 Unresolved reference 'chatHistory'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:517:43 Unresolved reference 'id'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:518:38 Unresolved reference 'role'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:530:44 Unresolved reference 'content'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:536:33 Unresolved reference 'suggestedActions'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:538:33 Unresolved reference 'suggestedActions'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:538:67 Cannot infer type for this parameter. Please specify it explicitly.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:538:72 Cannot infer type for this parameter. Please specify it explicitly.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:539:33 @Composable invocations can only happen from the context of a @Composable function
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:540:79 Unresolved reference 'id'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:541:55 Unresolved reference 'applied'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:543:48 Unresolved reference 'applied'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:547:49 Unresolved reference 'label'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:671:41 Unresolved reference 'privacy'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:679:39 Argument type mismatch: actual type is 'kotlin.Any', but 'kotlin.Boolean' was expected.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:696:41 Unresolved reference 'privacy'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:721:23 Unresolved reference 'privacy'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:721:56 Cannot infer type for this parameter. Please specify it explicitly.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:722:21 @Composable invocations can only happen from the context of a @Composable function
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:756:21 Unresolved reference 'memories'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:756:42 Unresolved reference 'id'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:765:43 Unresolved reference 'key'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:765:56 Unresolved reference 'category'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:770:34 Unresolved reference 'content'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:772:71 Unresolved reference 'id'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:794:11 Unresolved reference 'SecretaryTask'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:800:23 Unresolved reference 'status'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:812:33 Unresolved reference 'title'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:817:26 Unresolved reference 'description'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:820:37 Unresolved reference 'description'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:826:33 Cannot infer type for this parameter. Please specify it explicitly.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:827:21 Cannot infer type for this parameter. Please specify it explicitly.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:827:26 Unresolved reference 'priority'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:828:21 Argument type mismatch: actual type is 'kotlin.text.CharCategory', but 'kotlin.Any' was expected.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:829:21 Argument type mismatch: actual type is 'R?', but 'kotlin.Any' was expected.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:829:26 Unresolved reference 'dueDate'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:829:35 Cannot infer type for this parameter. Please specify it explicitly.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:829:39 Cannot infer type for this parameter. Please specify it explicitly.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:829:53 Unresolved reference 'dueTime'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:830:26 Unresolved reference 'location'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:831:21 Argument type mismatch: actual type is 'R?', but 'kotlin.Any' was expected.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:831:26 Unresolved reference 'sourceSender'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:831:40 Cannot infer type for this parameter. Please specify it explicitly.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:831:44 Cannot infer type for this parameter. Please specify it explicitly.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:831:54 Unresolved reference 'sourceApp'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:834:38 Cannot infer type for this parameter. Please specify it explicitly.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/Screens.kt:834:38 Not enough information to infer type argument for 'T'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/SecretaryViewModel.kt:6:28 Unresolved reference 'data'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/SecretaryViewModel.kt:7:28 Unresolved reference 'data'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/SecretaryViewModel.kt:8:28 Unresolved reference 'data'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/SecretaryViewModel.kt:9:28 Unresolved reference 'data'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/SecretaryViewModel.kt:10:28 Unresolved reference 'data'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/SecretaryViewModel.kt:11:28 Unresolved reference 'data'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/SecretaryViewModel.kt:12:28 Unresolved reference 'data'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/SecretaryViewModel.kt:26:25 Unresolved reference 'SecretaryState'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/SecretaryViewModel.kt:26:42 Unresolved reference 'SecretaryState'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/SecretaryViewModel.kt:37:25 Unresolved reference 'PrefsStore'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/SecretaryViewModel.kt:38:23 Unresolved reference 'SecretaryApiClient'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/SecretaryViewModel.kt:42:56 Unresolved reference 'SecretaryState'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/SecretaryViewModel.kt:77:13 Cannot infer type for this parameter. Please specify it explicitly.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/SecretaryViewModel.kt:77:25 Cannot infer type for this parameter. Please specify it explicitly.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/SecretaryViewModel.kt:78:18 Cannot infer type for this parameter. Please specify it explicitly.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/SecretaryViewModel.kt:78:18 Not enough information to infer type argument for 'T'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/SecretaryViewModel.kt:78:30 Cannot infer type for this parameter. Please specify it explicitly.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/SecretaryViewModel.kt:82:18 Cannot infer type for this parameter. Please specify it explicitly.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/SecretaryViewModel.kt:82:18 Not enough information to infer type argument for 'T'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/SecretaryViewModel.kt:88:80 Unresolved reference 'SecretaryState'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/SecretaryViewModel.kt:91:13 Cannot infer type for this parameter. Please specify it explicitly.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/SecretaryViewModel.kt:91:25 Cannot infer type for this parameter. Please specify it explicitly.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/SecretaryViewModel.kt:92:18 Cannot infer type for this parameter. Please specify it explicitly.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/SecretaryViewModel.kt:92:18 Not enough information to infer type argument for 'T'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/SecretaryViewModel.kt:92:30 Cannot infer type for this parameter. Please specify it explicitly.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/SecretaryViewModel.kt:98:18 Cannot infer type for this parameter. Please specify it explicitly.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/SecretaryViewModel.kt:98:18 Not enough information to infer type argument for 'T'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/SecretaryViewModel.kt:107:58 Unresolved reference 'PiiRedactor'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/SecretaryViewModel.kt:110:17 Unresolved reference 'IngestRequest'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/SecretaryViewModel.kt:146:13 Cannot infer type for this parameter. Please specify it explicitly.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/SecretaryViewModel.kt:146:25 Cannot infer type for this parameter. Please specify it explicitly.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/SecretaryViewModel.kt:147:18 Cannot infer type for this parameter. Please specify it explicitly.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/SecretaryViewModel.kt:147:18 Not enough information to infer type argument for 'T'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/SecretaryViewModel.kt:147:30 Cannot infer type for this parameter. Please specify it explicitly.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/SecretaryViewModel.kt:148:37 Unresolved reference 'state'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/SecretaryViewModel.kt:150:37 Unresolved reference 'newAlertsCount'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/SecretaryViewModel.kt:159:18 Cannot infer type for this parameter. Please specify it explicitly.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/SecretaryViewModel.kt:159:18 Not enough information to infer type argument for 'T'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/SecretaryViewModel.kt:188:17 Unresolved reference 'CreateTaskRequest'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/SecretaryViewModel.kt:218:53 Unresolved reference 'CreateMemoryRequest'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/SecretaryViewModel.kt:226:53 Unresolved reference 'privacy'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/SecretaryViewModel.kt:226:76 Cannot infer type for this parameter. Please specify it explicitly.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/SecretaryViewModel.kt:242:51 Unresolved reference 'privacy'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/SecretaryViewModel.kt:242:84 Overload resolution ambiguity between candidates:
+fun <T> Array<out T>.distinct(): List<T>
+fun BooleanArray.distinct(): List<Boolean>
+fun ByteArray.distinct(): List<Byte>
+fun CharArray.distinct(): List<Char>
+fun DoubleArray.distinct(): List<Double>
+fun FloatArray.distinct(): List<Float>
+fun IntArray.distinct(): List<Int>
+fun LongArray.distinct(): List<Long>
+fun ShortArray.distinct(): List<Short>
+fun <T> Iterable<T>.distinct(): List<T>
+fun <T> Sequence<T>.distinct(): Sequence<T>
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/SecretaryViewModel.kt:244:57 Overload resolution ambiguity between candidates:
+fun <T> Iterable<T>.forEach(action: (T) -> Unit): Unit
+fun <K, V> Map<out K, V>.forEach(action: (Map.Entry<K, V>) -> Unit): Unit
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/SecretaryViewModel.kt:244:85 Unresolved reference 'it'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/SecretaryViewModel.kt:250:50 Unresolved reference 'privacy'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/SecretaryViewModel.kt:250:82 Unresolved reference 'it'.
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/SecretaryViewModel.kt:252:57 Overload resolution ambiguity between candidates:
+fun <T> Iterable<T>.forEach(action: (T) -> Unit): Unit
+fun <K, V> Map<out K, V>.forEach(action: (Map.Entry<K, V>) -> Unit): Unit
+e: file:///home/runner/work/course-ai/course-ai/app/src/main/java/com/kairo/secretary/ui/SecretaryViewModel.kt:252:85 Unresolved reference 'it'.
+> Task :app:mergeExtDexDebug
+gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/__run_2-1795770057054.json
+FAILURE: Build failed with an exception.
+* What went wrong:
+Execution failed for task ':app:compileDebugKotlin'.
+> A failure occurred while executing org.jetbrains.kotlin.compilerRunner.GradleCompilerRunnerWithWorkers$GradleKotlinCompilerWorkAction
+   > Compilation error. See log for more details
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights.
+> Get more help at https://help.gradle.org.
+BUILD FAILED in 2m 57s
+22 actionable tasks: 22 executed
+Error: Process completed with exit code 1.

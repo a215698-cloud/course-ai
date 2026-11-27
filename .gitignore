@@ -1,12 +1,12 @@
-node_modules/
-build/
-dist/
-coverage/
+/node_modules/
+/build/
+/dist/
+/coverage/
 .DS_Store
 *.log
 .env*
 !.env.example
-data/
+/data/
 
 # Android & Gradle
 .gradle/
