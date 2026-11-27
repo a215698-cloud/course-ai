@@ -37,6 +37,10 @@ function getDb(): DatabaseSync {
       passcode_hash TEXT NOT NULL,
       claimed_at TEXT NOT NULL
     );
+    CREATE TABLE IF NOT EXISTS app_meta (
+      key TEXT PRIMARY KEY,
+      value TEXT NOT NULL
+    );
   `);
   dbInstance = db;
   return db;
@@ -313,7 +317,7 @@ export function buildDefaultState(): SecretaryState {
   };
 }
 
-export async function readStore(): Promise<SecretaryState> {
+async function readStoreDirect(): Promise<SecretaryState> {
   const db = getDb();
   const row = db.prepare('SELECT state_json FROM workspace_state WHERE id = 1').get() as { state_json?: string } | undefined;
   if (row?.state_json) {
@@ -324,24 +328,38 @@ export async function readStore(): Promise<SecretaryState> {
   try {
     const legacyRaw = await fsp.readFile(LEGACY_JSON_PATH, 'utf-8');
     const parsed = JSON.parse(legacyRaw) as SecretaryState;
-    await writeStore(parsed);
+    writeStoreDirect(parsed);
     return parsed;
   } catch {
     const initial = buildDefaultState();
-    await writeStore(initial);
+    writeStoreDirect(initial);
     return initial;
   }
 }
 
-export async function writeStore(nextState: SecretaryState): Promise<SecretaryState> {
+function writeStoreDirect(nextState: SecretaryState): SecretaryState {
+  const db = getDb();
+  const nowIso = getKualaLumpurParts().isoOffset;
+  db.prepare(
+    `INSERT INTO workspace_state (id, state_json, updated_at)
+     VALUES (1, ?, ?)
+     ON CONFLICT(id) DO UPDATE SET state_json = excluded.state_json, updated_at = excluded.updated_at`
+  ).run(JSON.stringify(nextState), nowIso);
+  return nextState;
+}
+
+export async function readStore(): Promise<SecretaryState> {
+  let result!: SecretaryState;
   writeQueue = writeQueue.then(async () => {
-    const db = getDb();
-    const nowIso = getKualaLumpurParts().isoOffset;
-    db.prepare(
-      `INSERT INTO workspace_state (id, state_json, updated_at)
-       VALUES (1, ?, ?)
-       ON CONFLICT(id) DO UPDATE SET state_json = excluded.state_json, updated_at = excluded.updated_at`
-    ).run(JSON.stringify(nextState), nowIso);
+    result = await readStoreDirect();
+  });
+  await writeQueue;
+  return result;
+}
+
+export async function writeStore(nextState: SecretaryState): Promise<SecretaryState> {
+  writeQueue = writeQueue.then(() => {
+    writeStoreDirect(nextState);
   });
   await writeQueue;
   return nextState;
@@ -350,9 +368,28 @@ export async function writeStore(nextState: SecretaryState): Promise<SecretarySt
 export async function mutateStore(
   updater: (current: SecretaryState) => SecretaryState | Promise<SecretaryState>
 ): Promise<SecretaryState> {
-  const current = await readStore();
-  const updated = await updater(current);
-  return writeStore(updated);
+  let result!: SecretaryState;
+  writeQueue = writeQueue.then(async () => {
+    const current = await readStoreDirect();
+    const updated = await updater(current);
+    result = writeStoreDirect(updated);
+  });
+  await writeQueue;
+  return result;
+}
+
+export function getOrCreatePersistedSessionSecret(): string {
+  const db = getDb();
+  const row = db.prepare('SELECT value FROM app_meta WHERE key = ?').get('session_secret') as { value?: string } | undefined;
+  if (row?.value && row.value.length >= 32) {
+    return row.value;
+  }
+  const generated = crypto.randomBytes(32).toString('hex');
+  db.prepare(
+    `INSERT OR IGNORE INTO app_meta (key, value) VALUES ('session_secret', ?)`
+  ).run(generated);
+  const stored = db.prepare('SELECT value FROM app_meta WHERE key = ?').get('session_secret') as { value?: string } | undefined;
+  return stored?.value || generated;
 }
 
 export function getClaimedPasscodeHash(): string | null {
@@ -373,10 +410,17 @@ export function claimPasscodeHashIfEmpty(passcodeHash: string): boolean {
   return Number(result.changes) > 0;
 }
 
-export function getStorageInfo(): { engine: string; dbPath: string } {
+export function getStorageInfo(): {
+  engine: string;
+  dbPath: string;
+  persistentVolumeConfigured: boolean;
+  runningOnCloudRun: boolean;
+} {
   return {
     engine: 'sqlite',
     dbPath: DB_PATH,
+    persistentVolumeConfigured: Boolean(process.env.KAIRO_DATA_DIR?.trim()),
+    runningOnCloudRun: Boolean(process.env.K_SERVICE?.trim()),
   };
 }
 

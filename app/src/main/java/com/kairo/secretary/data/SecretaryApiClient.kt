@@ -7,6 +7,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
+import okhttp3.ConnectionSpec
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -54,6 +55,7 @@ class SecretaryApiClient(private val prefsStore: PrefsStore) {
     }
 
     private val client = OkHttpClient.Builder()
+        .connectionSpecs(listOf(ConnectionSpec.MODERN_TLS, ConnectionSpec.CLEARTEXT))
         .connectTimeout(15, TimeUnit.SECONDS)
         .readTimeout(60, TimeUnit.SECONDS)
         .writeTimeout(20, TimeUnit.SECONDS)
@@ -70,7 +72,9 @@ class SecretaryApiClient(private val prefsStore: PrefsStore) {
     }
 
     private fun requestBuilder(fullUrl: String, requiresAuth: Boolean = true): Request.Builder {
-        val builder = Request.Builder().url(fullUrl)
+        val builder = Request.Builder()
+            .url(fullUrl)
+            .header("Accept", "application/json")
         if (requiresAuth) {
             val token = prefsStore.getAuthToken()
             if (!token.isNullOrBlank()) {

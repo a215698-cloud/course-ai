@@ -1,13 +1,32 @@
 import crypto from 'crypto';
 import { NextFunction, Request, Response } from 'express';
-import { claimPasscodeHashIfEmpty, getClaimedPasscodeHash } from './store.ts';
+import {
+  claimPasscodeHashIfEmpty,
+  getClaimedPasscodeHash,
+  getOrCreatePersistedSessionSecret,
+} from './store.ts';
 
-const IN_MEMORY_SESSION_SECRET = crypto.randomBytes(32).toString('hex');
 const TOKEN_TTL_MS = 1000 * 60 * 60 * 24 * 30; // 30 days
+let cachedSessionSecret: string | null = null;
 
 function getSessionSecret(): string {
   const envSecret = process.env.KAIRO_SESSION_SECRET?.trim();
-  return envSecret && envSecret.length >= 16 ? envSecret : IN_MEMORY_SESSION_SECRET;
+  if (envSecret && envSecret.length >= 16) {
+    return envSecret;
+  }
+  const envPasscode = getEnvPasscode();
+  if (envPasscode) {
+    if (!cachedSessionSecret) {
+      cachedSessionSecret = crypto
+        .scryptSync(envPasscode, 'kairo-session-hmac-v1', 32)
+        .toString('hex');
+    }
+    return cachedSessionSecret;
+  }
+  if (!cachedSessionSecret) {
+    cachedSessionSecret = getOrCreatePersistedSessionSecret();
+  }
+  return cachedSessionSecret;
 }
 
 export function getEnvPasscode(): string | null {

@@ -211,7 +211,9 @@ data class HealthResponse(
     val authRequired: Boolean = true,
     val authClaimed: Boolean = false,
     val envPasscodeConfigured: Boolean = false,
-    val storageEngine: String = ""
+    val storageEngine: String = "",
+    val persistentVolumeConfigured: Boolean = true,
+    val runningOnCloudRun: Boolean = false
 )
 
 @Serializable

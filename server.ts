@@ -81,6 +81,7 @@ function sendRouteError(res: Response, err: unknown): void {
 
 async function startServer() {
   const app = express();
+  app.set('trust proxy', 1);
   app.use(express.json({ limit: '1mb' }));
 
   app.get('/api/health', (_req: Request, res: Response) => {
@@ -96,6 +97,8 @@ async function startServer() {
       authClaimed: isAuthClaimed(),
       envPasscodeConfigured: getEnvPasscode() !== null,
       storageEngine: storage.engine,
+      persistentVolumeConfigured: storage.persistentVolumeConfigured,
+      runningOnCloudRun: storage.runningOnCloudRun,
     });
   });
 

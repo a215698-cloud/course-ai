@@ -319,8 +319,7 @@ class SecretaryViewModel(application: Application) : AndroidViewModel(applicatio
             }.onSuccess { (health, auth) ->
                 prefs.saveBackendUrl(targetUrl)
                 val aiReady = health.aiConfigured
-                val aiNote = if (aiReady) "Gemini Ready" else "GEMINI_API_KEY missing on server"
-                val statusMsg = "Connected (${health.storageEngine.uppercase()} · ${health.timezone} · $aiNote)"
+                val statusMsg = formatConnectionSummary(health)
                 val errType = when {
                     !aiReady -> ConnectionErrorType.AI_SERVICE_ERROR
                     !auth.authenticated -> ConnectionErrorType.AUTH_FAILED
@@ -361,6 +360,16 @@ class SecretaryViewModel(application: Application) : AndroidViewModel(applicatio
         }
     }
 
+    private fun formatConnectionSummary(health: com.kairo.secretary.data.HealthResponse): String {
+        val aiNote = if (health.aiConfigured) "Gemini Ready" else "GEMINI_API_KEY missing on server"
+        val storageNote = if (health.runningOnCloudRun && !health.persistentVolumeConfigured) {
+            "${health.storageEngine.uppercase()} (Ephemeral Cloud Run disk - mount KAIRO_DATA_DIR or set KAIRO_ACCESS_PASSCODE)"
+        } else {
+            health.storageEngine.uppercase()
+        }
+        return "Connected ($storageNote · ${health.timezone} · $aiNote)"
+    }
+
     fun checkConnectionAndSync() {
         if (prefs.getBackendUrl().isBlank()) {
             _uiState.update {
@@ -376,7 +385,6 @@ class SecretaryViewModel(application: Application) : AndroidViewModel(applicatio
                 health to auth
             }.onSuccess { (health, auth) ->
                 val aiReady = health.aiConfigured
-                val aiNote = if (aiReady) "Gemini Ready" else "GEMINI_API_KEY missing on server"
                 val errType = when {
                     !aiReady -> ConnectionErrorType.AI_SERVICE_ERROR
                     !auth.authenticated -> ConnectionErrorType.AUTH_FAILED
@@ -387,7 +395,7 @@ class SecretaryViewModel(application: Application) : AndroidViewModel(applicatio
                         connectionOk = health.ok,
                         connectionErrorType = errType,
                         aiServiceHealthy = aiReady,
-                        connectionStatus = "Connected (${health.storageEngine.uppercase()} · ${health.timezone} · $aiNote)",
+                        connectionStatus = formatConnectionSummary(health),
                         authClaimed = auth.claimed,
                         isAuthenticated = auth.authenticated
                     )

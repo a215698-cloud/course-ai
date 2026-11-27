@@ -48,10 +48,39 @@ class PrefsStore(context: Context) {
         private const val MAX_DEDUPE_ENTRIES = 120
     }
 
+    private fun isAiStudioPreviewHost(host: String): Boolean {
+        val lower = host.lowercase()
+        return lower.startsWith("ais-dev-") || lower.startsWith("ais-pre-")
+    }
+
+    private fun putEncryptedString(key: String, plainValue: String) {
+        prefs.edit().putString(key, SecureStorage.encrypt(plainValue)).apply()
+    }
+
+    private fun getDecryptedString(key: String): String? {
+        val raw = prefs.getString(key, null) ?: return null
+        val decrypted = SecureStorage.decrypt(raw)
+        if (decrypted != null && !raw.startsWith("enc:v1:")) {
+            // Migrate legacy plaintext value to Keystore AES-GCM at rest
+            prefs.edit().putString(key, SecureStorage.encrypt(decrypted)).apply()
+        }
+        return decrypted
+    }
+
     fun getBackendUrl(): String {
         val saved = prefs.getString(KEY_BACKEND_URL, null)?.trim()
-        val raw = if (!saved.isNullOrBlank()) saved else BuildConfig.DEFAULT_BACKEND_URL.trim()
-        return raw.trimEnd('/')
+        if (!saved.isNullOrBlank()) {
+            val parsed = saved.toHttpUrlOrNull()
+            if (parsed != null && isAiStudioPreviewHost(parsed.host)) {
+                // Purge legacy broken ais-dev / ais-pre URLs persisted by older APK builds
+                prefs.edit().remove(KEY_BACKEND_URL).remove(KEY_AUTH_TOKEN).apply()
+            } else {
+                return saved.trimEnd('/')
+            }
+        }
+        val builtIn = BuildConfig.DEFAULT_BACKEND_URL.trim().trimEnd('/')
+        val builtInParsed = builtIn.toHttpUrlOrNull()
+        return if (builtInParsed != null && isAiStudioPreviewHost(builtInParsed.host)) "" else builtIn
     }
 
     fun getRecentBackendUrls(): List<String> {
@@ -64,7 +93,10 @@ class PrefsStore(context: Context) {
         val builtInDefault = BuildConfig.DEFAULT_BACKEND_URL.trim().trimEnd('/')
         return (stored + listOfNotNull(builtInDefault.takeIf { it.isNotBlank() }))
             .map { it.trim().trimEnd('/') }
-            .filter { it.isNotBlank() }
+            .filter { url ->
+                val host = url.toHttpUrlOrNull()?.host.orEmpty()
+                url.isNotBlank() && !isAiStudioPreviewHost(host)
+            }
             .distinct()
             .take(4)
     }
@@ -97,13 +129,17 @@ class PrefsStore(context: Context) {
                 "https://$trimmed"
         }
 
-        val strippedApi = withScheme
-            .trimEnd('/')
-            .replace(Regex("/api(?:/.*)?$"), "")
-            .trimEnd('/')
+        val parsed = withScheme.toHttpUrlOrNull()
+            ?: return Result.failure(IllegalArgumentException("Invalid URL format. Example: https://your-service.a.run.app"))
 
-        val parsed = strippedApi.toHttpUrlOrNull()
-            ?: return Result.failure(IllegalArgumentException("Invalid URL format. Example: https://your-service.run.app"))
+        if (isAiStudioPreviewHost(parsed.host)) {
+            return Result.failure(
+                IllegalArgumentException(
+                    "AI Studio preview URLs (ais-dev / ais-pre) cannot be accessed from mobile apps (302/404). " +
+                        "Click Deploy app -> Google Cloud Run in AI Studio and paste the deployed https://...run.app URL."
+                )
+            )
+        }
 
         val localHosts = setOf("10.0.2.2", "127.0.0.1", "localhost")
         if (parsed.scheme == "http" && parsed.host.lowercase() !in localHosts) {
@@ -123,8 +159,8 @@ class PrefsStore(context: Context) {
             ""
         }
 
-        val basePath = parsed.encodedPath.trimEnd('/')
-        val clean = "${parsed.scheme}://${parsed.host}$portSuffix$basePath".trimEnd('/')
+        // Normalize strictly to scheme://host[:port] so browser sub-paths (/overview, /api/...) never break /api/* calls
+        val clean = "${parsed.scheme}://${parsed.host}$portSuffix"
         return Result.success(clean)
     }
 
@@ -143,11 +179,11 @@ class PrefsStore(context: Context) {
     }
 
     fun getAuthToken(): String? {
-        return prefs.getString(KEY_AUTH_TOKEN, null)?.trim()?.takeIf { it.isNotEmpty() }
+        return getDecryptedString(KEY_AUTH_TOKEN)?.trim()?.takeIf { it.isNotEmpty() }
     }
 
     fun setAuthToken(token: String) {
-        prefs.edit().putString(KEY_AUTH_TOKEN, token.trim()).apply()
+        putEncryptedString(KEY_AUTH_TOKEN, token.trim())
     }
 
     fun clearAuthToken() {
@@ -189,7 +225,7 @@ class PrefsStore(context: Context) {
         prefs.getString(KEY_LAST_SYNC_MYT, null)?.takeIf { it.isNotBlank() }
 
     fun getCachedState(): SecretaryState? {
-        val raw = prefs.getString(KEY_CACHED_STATE, null) ?: return null
+        val raw = getDecryptedString(KEY_CACHED_STATE) ?: return null
         return runCatching { json.decodeFromString<SecretaryState>(raw) }.getOrNull()
     }
 
@@ -197,7 +233,7 @@ class PrefsStore(context: Context) {
         runCatching {
             val encoded = json.encodeToString(state)
             prefs.edit()
-                .putString(KEY_CACHED_STATE, encoded)
+                .putString(KEY_CACHED_STATE, SecureStorage.encrypt(encoded))
                 .putBoolean(KEY_REDACT_LOCAL, state.privacy.redactSensitiveInfo)
                 .putBoolean(KEY_WECHAT_ENABLED, state.privacy.enabledSources["wechat"] ?: true)
                 .putBoolean(KEY_WHATSAPP_ENABLED, state.privacy.enabledSources["whatsapp"] ?: true)
@@ -209,18 +245,18 @@ class PrefsStore(context: Context) {
     fun saveListenerDiagnostic(diag: ListenerDiagnostic) {
         synchronized(queueLock) {
             runCatching {
-                prefs.edit().putString(KEY_LISTENER_DIAG, json.encodeToString(diag)).apply()
+                putEncryptedString(KEY_LISTENER_DIAG, json.encodeToString(diag))
             }
         }
     }
 
     fun getListenerDiagnostic(): ListenerDiagnostic? {
-        val raw = prefs.getString(KEY_LISTENER_DIAG, null) ?: return null
+        val raw = getDecryptedString(KEY_LISTENER_DIAG) ?: return null
         return runCatching { json.decodeFromString<ListenerDiagnostic>(raw) }.getOrNull()
     }
 
     fun getAllChannelStats(): Map<String, ChannelStats> {
-        val raw = prefs.getString(KEY_CHANNEL_STATS, null) ?: return emptyMap()
+        val raw = getDecryptedString(KEY_CHANNEL_STATS) ?: return emptyMap()
         return runCatching { json.decodeFromString<Map<String, ChannelStats>>(raw) }.getOrDefault(emptyMap())
     }
 
@@ -246,7 +282,7 @@ class PrefsStore(context: Context) {
             )
             current[source] = updated
             runCatching {
-                prefs.edit().putString(KEY_CHANNEL_STATS, json.encodeToString(current)).apply()
+                putEncryptedString(KEY_CHANNEL_STATS, json.encodeToString(current))
             }
         }
     }
@@ -323,13 +359,13 @@ class PrefsStore(context: Context) {
     }
 
     private fun getPendingSyncQueueLocked(): List<PendingSyncItem> {
-        val raw = prefs.getString(KEY_PENDING_QUEUE, null) ?: return emptyList()
+        val raw = getDecryptedString(KEY_PENDING_QUEUE) ?: return emptyList()
         return runCatching { json.decodeFromString<List<PendingSyncItem>>(raw) }.getOrDefault(emptyList())
     }
 
     private fun savePendingQueueLocked(items: List<PendingSyncItem>) {
         runCatching {
-            prefs.edit().putString(KEY_PENDING_QUEUE, json.encodeToString(items)).apply()
+            putEncryptedString(KEY_PENDING_QUEUE, json.encodeToString(items))
         }
     }
 
