@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">Kairo Secretary</string>
+    <string name="notification_listener_label">Kairo Authorized Message Listener</string>
+</resources>
